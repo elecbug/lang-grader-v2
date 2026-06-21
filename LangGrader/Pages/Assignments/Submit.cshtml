@@ -107,30 +107,56 @@
                             @foreach (var item in submission.Items)
                             {
                                 <div class="item-block">
-                                    <div class="kv kv-wide">
-                                        <div class="kv-key">URL</div>
-                                        <div class="kv-value break-all">@item.OriginalUrl</div>
+                                    <div class="info-block">
+                                        <div class="break-all">
+                                            <strong>URL:</strong> @item.OriginalUrl
+                                        </div>
 
-                                        <div class="kv-key">Kind</div>
-                                        <div class="kv-value">@item.UrlKind</div>
+                                        <div>
+                                            <strong>Kind:</strong> @item.UrlKind
+                                        </div>
 
-                                        <div class="kv-key">Owner</div>
-                                        <div class="kv-value">@item.Owner</div>
+                                        <div>
+                                            <strong>Owner:</strong> @item.Owner
+                                        </div>
 
-                                        <div class="kv-key">Repo</div>
-                                        <div class="kv-value">@item.Repo</div>
+                                        <div>
+                                            <strong>Repo:</strong> @item.Repo
+                                        </div>
 
-                                        <div class="kv-key">Branch</div>
-                                        <div class="kv-value">@(string.IsNullOrWhiteSpace(item.Branch) ? "(default)" : item.Branch)</div>
+                                        <div>
+                                            <strong>Branch:</strong> @(string.IsNullOrWhiteSpace(item.Branch) ? "(default)" : item.Branch)
+                                        </div>
 
-                                        <div class="kv-key">Path</div>
-                                        <div class="kv-value break-all">@(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</div>
+                                        <div class="break-all">
+                                            <strong>Path:</strong> @(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)
+                                        </div>
 
-                                        <div class="kv-key">Main file</div>
-                                        <div class="kv-value">@item.MainFilePath</div>
+                                        <div>
+                                            <strong>Main File:</strong> @item.MainFilePath
+                                        </div>
 
-                                        <div class="kv-key">Status</div>
-                                        <div class="kv-value">@item.Status</div>
+                                        <div>
+                                            <strong>Status:</strong>
+                                            <span class="@GetStatusBadgeClass(item.Status)">
+                                                @item.Status
+                                            </span>
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(item.ObservedSha))
+                                        {
+                                            <div class="break-all">
+                                                <strong>Observed SHA:</strong> @item.ObservedSha
+                                            </div>
+                                        }
+
+                                        @if (item.ValidatedAt.HasValue)
+                                        {
+                                            <div>
+                                                <strong>Validated At:</strong>
+                                                <span class="nowrap">@TimeViewHelper.FormatKst(item.ValidatedAt.Value)</span>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             }
@@ -186,4 +212,30 @@
             list.appendChild(div);
         }
     </script>
+}
+
+@functions {
+    private static string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Valid" => "badge badge-success",
+            "ValidationFailed" => "badge badge-error",
+            "Validating" => "badge badge-warning",
+            "PendingValidation" => "badge badge-warning",
+            "Deleted" => "badge badge-muted",
+            "InvalidUrl" => "badge badge-error",
+            "CloneFailed" => "badge badge-error",
+            "CloneTimeout" => "badge badge-error",
+            "DefaultBranchNotFound" => "badge badge-error",
+            "PathNotFound" => "badge badge-error",
+            "MainFileNotFound" => "badge badge-error",
+            "FileNotFound" => "badge badge-error",
+            "RequiredFileMissing" => "badge badge-error",
+            "RequiredFileConfigInvalid" => "badge badge-error",
+            "UnsupportedUrlKind" => "badge badge-error",
+            "SystemError" => "badge badge-error",
+            _ => "badge badge-muted"
+        };
+    }
 }

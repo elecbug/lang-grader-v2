@@ -202,6 +202,8 @@ public sealed class EffectiveSubmissionSelector : IEffectiveSubmissionSelector
                 "PathNotFound" or
                 "MainFileNotFound" or
                 "FileNotFound" or
+                "RequiredFileMissing" or
+                "RequiredFileConfigInvalid" or
                 "UnsupportedUrlKind" or
                 "SystemError");
     }

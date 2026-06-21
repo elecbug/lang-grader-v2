@@ -1,4 +1,5 @@
 ﻿using LangGrader.Models;
+using System.Text.Json;
 
 namespace LangGrader.Services;
 
@@ -15,7 +16,9 @@ public sealed class GitRepositoryValidator : IRepositoryValidator
         _environment = environment;
     }
 
-    public async Task<RepositoryValidationResult> ValidateAsync(SubmissionItem item)
+    public async Task<RepositoryValidationResult> ValidateAsync(
+        SubmissionItem item,
+        Assignment? assignment = null)
     {
         if (string.IsNullOrWhiteSpace(item.Owner) ||
             string.IsNullOrWhiteSpace(item.Repo))
@@ -123,61 +126,105 @@ public sealed class GitRepositoryValidator : IRepositoryValidator
                 {
                     return RepositoryValidationResult.Fail(
                         "PathNotFound",
-                        $"The submitted folder path does not exist: {DisplayPath(item.Path)}",
-                        branch
+                        $"Submitted folder path was not found: {DisplayPath(item.Path)}",
+                        observedSha: observedSha,
+                        localPath: targetPath,
+                        resolvedBranch: branch
                     );
                 }
 
-                var mainFilePath = string.IsNullOrWhiteSpace(item.MainFilePath)
+                var mainFileName = string.IsNullOrWhiteSpace(item.MainFilePath)
                     ? "main.c"
-                    : item.MainFilePath;
+                    : item.MainFilePath.Trim();
 
-                var absoluteMainFilePath = Path.Combine(
+                var mainFilePath = Path.Combine(
                     targetPath,
-                    mainFilePath.Replace('/', Path.DirectorySeparatorChar)
+                    mainFileName.Replace('/', Path.DirectorySeparatorChar)
                 );
 
-                if (!File.Exists(absoluteMainFilePath))
+                if (!File.Exists(mainFilePath))
                 {
                     return RepositoryValidationResult.Fail(
                         "MainFileNotFound",
-                        $"The main file does not exist: {mainFilePath}",
-                        branch
+                        $"Main file was not found: {mainFileName}",
+                        observedSha: observedSha,
+                        localPath: targetPath,
+                        resolvedBranch: branch
+                    );
+                }
+
+                var requiredFilesResult = CheckRequiredFilesForDirectory(
+                    targetPath,
+                    assignment
+                );
+
+                if (!requiredFilesResult.IsValid)
+                {
+                    return RepositoryValidationResult.Fail(
+                        requiredFilesResult.Status,
+                        requiredFilesResult.Message,
+                        observedSha: observedSha,
+                        localPath: targetPath,
+                        resolvedBranch: branch
                     );
                 }
 
                 return RepositoryValidationResult.Success(
-                    $"Repository URL is valid. Resolved branch: {branch}. Folder path and main file were found.",
-                    observedSha,
-                    targetPath,
-                    branch
+                    status: "Valid",
+                    message: $"Repository was validated successfully. Branch={branch}, SHA={observedSha}.",
+                    observedSha: observedSha,
+                    localPath: targetPath,
+                    resolvedBranch: branch
                 );
             }
-
-            if (item.UrlKind is "File" or "RawFile")
+            else if (item.UrlKind is "File" or "RawFile")
             {
                 if (!File.Exists(targetPath))
                 {
                     return RepositoryValidationResult.Fail(
                         "FileNotFound",
-                        $"The submitted file path does not exist: {DisplayPath(item.Path)}",
-                        branch
+                        $"Submitted file path was not found: {DisplayPath(item.Path)}",
+                        observedSha: observedSha,
+                        localPath: targetPath,
+                        resolvedBranch: branch
+                    );
+                }
+
+                var requiredFilesResult = CheckRequiredFilesForSingleFile(
+                    targetPath,
+                    item,
+                    assignment
+                );
+
+                if (!requiredFilesResult.IsValid)
+                {
+                    return RepositoryValidationResult.Fail(
+                        requiredFilesResult.Status,
+                        requiredFilesResult.Message,
+                        observedSha: observedSha,
+                        localPath: targetPath,
+                        resolvedBranch: branch
                     );
                 }
 
                 return RepositoryValidationResult.Success(
-                    $"File URL is valid. Resolved branch: {branch}. The submitted file was found.",
-                    observedSha,
-                    targetPath,
-                    branch
+                    status: "Valid",
+                    message: $"File was validated successfully. Branch={branch}, SHA={observedSha}.",
+                    observedSha: observedSha,
+                    localPath: targetPath,
+                    resolvedBranch: branch
                 );
             }
-
-            return RepositoryValidationResult.Fail(
-                "UnsupportedUrlKind",
-                $"Unsupported URL kind: {item.UrlKind}",
-                branch
-            );
+            else
+            {
+                return RepositoryValidationResult.Fail(
+                    "UnsupportedUrlKind",
+                    $"Unsupported URL kind: {item.UrlKind}",
+                    observedSha: observedSha,
+                    localPath: targetPath,
+                    resolvedBranch: branch
+                );
+            }
         }
         catch (Exception ex)
         {
@@ -282,5 +329,271 @@ public sealed class GitRepositoryValidator : IRepositoryValidator
         return text.Length <= 1000
             ? text
             : text[..1000] + "...";
+    }
+
+    private sealed class RequiredFilesCheckResult
+    {
+        public bool IsValid { get; init; }
+
+        public string Status { get; init; } = "Valid";
+
+        public string Message { get; init; } = "";
+    }
+
+    private static RequiredFilesCheckResult CheckRequiredFilesForDirectory(
+        string baseDirectory,
+        Assignment? assignment)
+    {
+        var parseResult = ParseRequiredFiles(assignment);
+
+        if (!parseResult.IsValid)
+        {
+            return new RequiredFilesCheckResult
+            {
+                IsValid = false,
+                Status = "RequiredFileConfigInvalid",
+                Message = parseResult.ErrorMessage
+            };
+        }
+
+        if (parseResult.RequiredFiles.Count == 0)
+        {
+            return new RequiredFilesCheckResult
+            {
+                IsValid = true,
+                Status = "Valid",
+                Message = "No required files were configured."
+            };
+        }
+
+        var missingFiles = new List<string>();
+
+        foreach (var requiredFile in parseResult.RequiredFiles)
+        {
+            var candidatePath = Path.Combine(
+                baseDirectory,
+                requiredFile.Replace('/', Path.DirectorySeparatorChar)
+            );
+
+            if (!File.Exists(candidatePath))
+            {
+                missingFiles.Add(requiredFile);
+            }
+        }
+
+        if (missingFiles.Count > 0)
+        {
+            return new RequiredFilesCheckResult
+            {
+                IsValid = false,
+                Status = "RequiredFileMissing",
+                Message = "Required file(s) missing: " + string.Join(", ", missingFiles)
+            };
+        }
+
+        return new RequiredFilesCheckResult
+        {
+            IsValid = true,
+            Status = "Valid",
+            Message = "All required files were found."
+        };
+    }
+
+    private static RequiredFilesCheckResult CheckRequiredFilesForSingleFile(
+        string submittedFilePath,
+        SubmissionItem item,
+        Assignment? assignment)
+    {
+        var parseResult = ParseRequiredFiles(assignment);
+
+        if (!parseResult.IsValid)
+        {
+            return new RequiredFilesCheckResult
+            {
+                IsValid = false,
+                Status = "RequiredFileConfigInvalid",
+                Message = parseResult.ErrorMessage
+            };
+        }
+
+        if (parseResult.RequiredFiles.Count == 0)
+        {
+            return new RequiredFilesCheckResult
+            {
+                IsValid = true,
+                Status = "Valid",
+                Message = "No required files were configured."
+            };
+        }
+
+        if (parseResult.RequiredFiles.Count > 1)
+        {
+            return new RequiredFilesCheckResult
+            {
+                IsValid = false,
+                Status = "RequiredFileMissing",
+                Message = "This assignment requires multiple files, but the submission URL points to a single file. Required file(s): " +
+                          string.Join(", ", parseResult.RequiredFiles)
+            };
+        }
+
+        var requiredFile = parseResult.RequiredFiles[0];
+
+        var submittedFileName = Path.GetFileName(submittedFilePath);
+        var submittedPath = item.Path?.Replace('\\', '/') ?? "";
+
+        var matchesByFileName = string.Equals(
+            submittedFileName,
+            Path.GetFileName(requiredFile),
+            StringComparison.OrdinalIgnoreCase
+        );
+
+        var matchesByPath = submittedPath.EndsWith(
+            requiredFile,
+            StringComparison.OrdinalIgnoreCase
+        );
+
+        if (!matchesByFileName && !matchesByPath)
+        {
+            return new RequiredFilesCheckResult
+            {
+                IsValid = false,
+                Status = "RequiredFileMissing",
+                Message = $"Required file was not satisfied. Required={requiredFile}, Submitted={submittedPath}"
+            };
+        }
+
+        return new RequiredFilesCheckResult
+        {
+            IsValid = true,
+            Status = "Valid",
+            Message = "Required file was found."
+        };
+    }
+
+    private sealed class RequiredFilesParseResult
+    {
+        public bool IsValid { get; init; }
+
+        public List<string> RequiredFiles { get; init; } = new();
+
+        public string ErrorMessage { get; init; } = "";
+    }
+
+    private static RequiredFilesParseResult ParseRequiredFiles(Assignment? assignment)
+    {
+        if (assignment is null || string.IsNullOrWhiteSpace(assignment.RequiredFilesJson))
+        {
+            return new RequiredFilesParseResult
+            {
+                IsValid = true,
+                RequiredFiles = new List<string>()
+            };
+        }
+
+        List<string>? values;
+
+        try
+        {
+            values = JsonSerializer.Deserialize<List<string>>(assignment.RequiredFilesJson);
+        }
+        catch (JsonException)
+        {
+            return new RequiredFilesParseResult
+            {
+                IsValid = false,
+                ErrorMessage = "Assignment required files JSON is invalid."
+            };
+        }
+
+        if (values is null)
+        {
+            return new RequiredFilesParseResult
+            {
+                IsValid = false,
+                ErrorMessage = "Assignment required files JSON must be an array of strings."
+            };
+        }
+
+        var normalizedFiles = new List<string>();
+
+        foreach (var value in values)
+        {
+            var normalized = NormalizeRequiredFilePath(value);
+
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                continue;
+            }
+
+            if (!IsSafeRelativeFilePath(normalized))
+            {
+                return new RequiredFilesParseResult
+                {
+                    IsValid = false,
+                    ErrorMessage = $"Required file path is invalid: {value}"
+                };
+            }
+
+            normalizedFiles.Add(normalized);
+        }
+
+        normalizedFiles = normalizedFiles
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return new RequiredFilesParseResult
+        {
+            IsValid = true,
+            RequiredFiles = normalizedFiles
+        };
+    }
+
+    private static string NormalizeRequiredFilePath(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "";
+        }
+
+        return value
+            .Trim()
+            .Replace('\\', '/')
+            .TrimStart('/');
+    }
+
+    private static bool IsSafeRelativeFilePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        if (Path.IsPathRooted(path))
+        {
+            return false;
+        }
+
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length == 0)
+        {
+            return false;
+        }
+
+        foreach (var part in parts)
+        {
+            if (part == "." || part == "..")
+            {
+                return false;
+            }
+
+            if (part.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

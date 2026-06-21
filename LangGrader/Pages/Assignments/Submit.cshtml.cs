@@ -179,7 +179,7 @@ public class SubmitModel : PageModel
 
             await _db.SaveChangesAsync();
 
-            var validationResult = await _repositoryValidator.ValidateAsync(item);
+            var validationResult = await _repositoryValidator.ValidateAsync(item, assignment);
 
             item.Status = validationResult.Status;
             item.ObservedSha = validationResult.ObservedSha;

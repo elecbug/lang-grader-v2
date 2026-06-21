@@ -212,7 +212,7 @@ public class SubmissionsModel : PageModel
 
         foreach (var item in submission.Items)
         {
-            await RevalidateItemCoreAsync(item);
+            await RevalidateItemCoreAsync(item, submission.Assignment);
         }
 
         submission.Status = CalculateSubmissionStatus(submission);
@@ -260,7 +260,7 @@ public class SubmissionsModel : PageModel
             return NotFound();
         }
 
-        await RevalidateItemCoreAsync(item);
+        await RevalidateItemCoreAsync(item, submission.Assignment);
 
         submission.Status = CalculateSubmissionStatus(submission);
 
@@ -435,8 +435,10 @@ public class SubmissionsModel : PageModel
             ? value
             : value[..80];
     }
-
-    private async Task RevalidateItemCoreAsync(SubmissionItem item)
+    
+    private async Task RevalidateItemCoreAsync(
+        SubmissionItem item,
+        Assignment assignment)
     {
         var startedAt = DateTime.UtcNow;
 
@@ -451,7 +453,10 @@ public class SubmissionsModel : PageModel
 
         await _db.SaveChangesAsync();
 
-        var validationResult = await _repositoryValidator.ValidateAsync(item);
+        var validationResult = await _repositoryValidator.ValidateAsync(
+            item,
+            assignment
+        );
 
         var completedAt = DateTime.UtcNow;
 

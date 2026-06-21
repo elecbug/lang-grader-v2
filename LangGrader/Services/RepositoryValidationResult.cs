@@ -1,4 +1,5 @@
 ﻿namespace LangGrader.Services;
+
 public sealed class RepositoryValidationResult
 {
     public bool IsValid { get; init; }
@@ -30,7 +31,27 @@ public sealed class RepositoryValidationResult
         };
     }
 
-    public static RepositoryValidationResult Fail(string status, string message)
+    public static RepositoryValidationResult Success(
+        string status,
+        string message,
+        string? observedSha,
+        string? localPath,
+        string? resolvedBranch)
+    {
+        return new RepositoryValidationResult
+        {
+            IsValid = true,
+            Status = status,
+            Message = message,
+            ObservedSha = observedSha,
+            LocalPath = localPath,
+            ResolvedBranch = resolvedBranch
+        };
+    }
+
+    public static RepositoryValidationResult Fail(
+        string status,
+        string message)
     {
         return new RepositoryValidationResult
         {
@@ -50,6 +71,24 @@ public sealed class RepositoryValidationResult
             IsValid = false,
             Status = status,
             Message = message,
+            ResolvedBranch = resolvedBranch
+        };
+    }
+
+    public static RepositoryValidationResult Fail(
+        string status,
+        string message,
+        string? observedSha,
+        string? localPath,
+        string? resolvedBranch)
+    {
+        return new RepositoryValidationResult
+        {
+            IsValid = false,
+            Status = status,
+            Message = message,
+            ObservedSha = observedSha,
+            LocalPath = localPath,
             ResolvedBranch = resolvedBranch
         };
     }
