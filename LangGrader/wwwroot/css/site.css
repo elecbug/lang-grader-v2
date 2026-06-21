@@ -327,3 +327,20 @@ code {
 .item-block:last-child {
     margin-bottom: 0;
 }
+
+.submit-form {
+    max-width: none;
+}
+
+.submit-form .url-row {
+    max-width: 1200px;
+}
+
+.submit-form input[name$=".Url"] {
+    max-width: none;
+    width: 100%;
+}
+
+.submit-form input[name$=".MainFilePath"] {
+    max-width: 420px;
+}

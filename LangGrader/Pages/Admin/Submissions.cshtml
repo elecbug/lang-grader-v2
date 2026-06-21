@@ -1,264 +1,331 @@
-﻿@page
+@page
 @model LangGrader.Pages.Admin.SubmissionsModel
 @{
     ViewData["Title"] = "Submission Summary";
 }
 
-<h1>Submission Summary</h1>
-
-<p>
-    This page shows the effective submission candidate for each student.
-    Deleted submissions are excluded from effective selection but counted for audit purposes.
+<h1 class="page-title">Submission Summary</h1>
+<p class="page-subtitle">
+    This page shows the effective submission candidate for each student. Deleted submissions are excluded from effective selection but counted for audit purposes.
 </p>
 
-<p>
-    <a asp-page="/Admin/Database">Database Viewer</a>
-    |
-    <a asp-page="/Assignments/Index">Back to Assignments</a>
-</p>
+<div class="toolbar">
+    <a class="button button-secondary" asp-page="/Admin/Database">Database Viewer</a>
+    <a class="button button-secondary" asp-page="/Assignments/Index">Back to Assignments</a>
+</div>
 
 @if (Model.Assignments.Count == 0)
 {
-    <p>No assignments found.</p>
+    <div class="empty-state">No assignments found.</div>
 }
 else
 {
-    <form method="get" style="margin-bottom: 1rem;">
-        <label for="assignmentId">Assignment</label>
-        <select id="assignmentId" name="assignmentId">
-            @foreach (var assignment in Model.Assignments)
-            {
-                if (assignment.Id == Model.AssignmentId)
-                {
-                    <option value="@assignment.Id" selected>
-                        @assignment.Title
-                    </option>
-                }
-                else
-                {
-                    <option value="@assignment.Id">
-                        @assignment.Title
-                    </option>
-                }
-            }
-        </select>
+    <div class="card">
+        <form method="get" class="form-grid">
+            <div class="form-row">
+                <label for="assignmentId">Assignment</label>
+                <select id="assignmentId" name="assignmentId">
+                    @foreach (var assignment in Model.Assignments)
+                    {
+                        if (assignment.Id == Model.AssignmentId)
+                        {
+                            <option value="@assignment.Id" selected>@assignment.Title</option>
+                        }
+                        else
+                        {
+                            <option value="@assignment.Id">@assignment.Title</option>
+                        }
+                    }
+                </select>
+            </div>
 
-        <button type="submit">Load</button>
-    </form>
+            <div class="toolbar">
+                <button type="submit" class="button-primary">Load</button>
+            </div>
+        </form>
+    </div>
 }
 
 @if (Model.Summary is not null)
 {
-    <h2>@Model.Summary.Assignment.Title</h2>
+    <div class="card">
+        <div class="toolbar toolbar-spread">
+            <div>
+                <h2 class="card-title">@Model.Summary.Assignment.Title</h2>
+                <div class="text-muted">Deadline: @TimeViewHelper.FormatKst(Model.Summary.Assignment.DeadlineAt)</div>
+            </div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.Message))
-    {
-        <div style="color: green; margin-bottom: 1rem;">
-            @Model.Message
+            <div>
+                @if (!Model.Summary.Assignment.IsFrozen)
+                {
+                    <form method="post"
+                          class="inline-form"
+                          asp-page-handler="Freeze"
+                          asp-route-assignmentId="@Model.Summary.Assignment.Id"
+                          onsubmit="return confirm('Freeze this assignment? This will lock the current effective submissions.');">
+                        <button type="submit" class="button-warning">Freeze Assignment</button>
+                    </form>
+                }
+                else
+                {
+                    <form method="post"
+                          class="inline-form"
+                          asp-page-handler="Unfreeze"
+                          asp-route-assignmentId="@Model.Summary.Assignment.Id"
+                          onsubmit="return confirm('Unfreeze this assignment? This will clear freeze metadata and delete frozen snapshots.');">
+                        <button type="submit" class="button-danger">Unfreeze Assignment</button>
+                    </form>
+                }
+            </div>
         </div>
-    }
 
-    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-    {
-        <div style="color: red; margin-bottom: 1rem;">
-            @Model.ErrorMessage
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <div class="message message-success">@Model.Message</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="message message-error">@Model.ErrorMessage</div>
+        }
+
+        @if (Model.Summary.Assignment.IsFrozen)
+        {
+            <div class="message message-info">This assignment is frozen.</div>
+        }
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Students</div>
+                <div class="stat-value">@Model.Summary.TotalStudents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Submitted</div>
+                <div class="stat-value">@Model.Summary.SubmittedStudents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Ready for Freeze</div>
+                <div class="stat-value">@Model.Summary.ReadyStudents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Missing</div>
+                <div class="stat-value">@Model.Summary.MissingStudents</div>
+            </div>
         </div>
-    }
 
-    @if (!Model.Summary.Assignment.IsFrozen)
-    {
-        <form method="post"
-              asp-page-handler="Freeze"
-              asp-route-assignmentId="@Model.Summary.Assignment.Id"
-              onsubmit="return confirm('Freeze this assignment? This will lock the current effective submissions.');"
-              style="margin-bottom: 1rem;">
-            <button type="submit">Freeze Assignment</button>
-        </form>
-    }
-    else
-    {
-        <p><strong>This assignment is frozen.</strong></p>
+        <div class="kv kv-wide">
+            <div class="kv-key">Frozen</div>
+            <div class="kv-value">
+                @if (Model.Summary.Assignment.IsFrozen)
+                {
+                    <span class="badge badge-info">Frozen</span>
+                }
+                else
+                {
+                    <span class="badge badge-muted">Not Frozen</span>
+                }
+            </div>
 
-        <form method="post"
-              asp-page-handler="Unfreeze"
-              asp-route-assignmentId="@Model.Summary.Assignment.Id"
-              onsubmit="return confirm('Unfreeze this assignment? This will clear freeze metadata and delete frozen snapshots.');"
-              style="margin-bottom: 1rem;">
-            <button type="submit">Unfreeze Assignment</button>
-        </form>
-    }
+            <div class="kv-key">Frozen At</div>
+            <div class="kv-value">
+                @if (Model.Summary.Assignment.FrozenAt.HasValue)
+                {
+                    @TimeViewHelper.FormatKst(Model.Summary.Assignment.FrozenAt.Value)
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </div>
 
-    <table border="1" cellpadding="8" cellspacing="0" style="margin-bottom: 1rem;">
-        <thead>
-            <tr>
-                <th>Total Students</th>
-                <th>Submitted Students</th>
-                <th>Ready for Freeze</th>
-                <th>Missing Students</th>
-                <th>Deadline</th>
-                <th>Frozen</th>
-                <th>Frozen At</th>
-                <th>Freeze Root</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>@Model.Summary.TotalStudents</td>
-                <td>@Model.Summary.SubmittedStudents</td>
-                <td>@Model.Summary.ReadyStudents</td>
-                <td>@Model.Summary.MissingStudents</td>
-                <td>@TimeViewHelper.FormatKst(Model.Summary.Assignment.DeadlineAt)</td>
-                <td>@Model.Summary.Assignment.IsFrozen</td>
-                <td>
-                    @if (Model.Summary.Assignment.FrozenAt.HasValue)
-                    {
-                        @TimeViewHelper.FormatKst(Model.Summary.Assignment.FrozenAt.Value)
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </td>
-                <td style="max-width: 420px; word-break: break-all;">
-                    @(Model.Summary.Assignment.FreezeRootPath ?? "-")
-                </td>
-            </tr>
-        </tbody>
-    </table>
+            <div class="kv-key">Freeze Root</div>
+            <div class="kv-value break-all">@(Model.Summary.Assignment.FreezeRootPath ?? "-")</div>
+        </div>
+    </div>
 
-    <table border="1" cellpadding="8" cellspacing="0">
-        <thead>
-            <tr>
-                <th>Student No</th>
-                <th>Name</th>
-                <th>Total Submissions</th>
-                <th>Deleted</th>
-                <th>Latest Submission</th>
-                <th>Effective Submission</th>
-                <th>Effective Status</th>
-                <th>Flags</th>
-                <th>Reason</th>
-                <th>Freeze</th>
-                <th>Items</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var row in Model.Summary.Rows)
-            {
+    <div class="table-wrap">
+        <table>
+            <thead>
                 <tr>
-                    <td>@row.StudentNo</td>
-                    <td>@row.StudentName</td>
-                    <td>@row.TotalSubmissionCount</td>
-                    <td>@row.DeletedSubmissionCount</td>
-                    <td>
-                        @if (row.LatestSubmission is null)
-                        {
-                            <span>-</span>
-                        }
-                        else
-                        {
-                            <div><strong>Id:</strong> @row.LatestSubmission.Id</div>
-                            <div><strong>Time:</strong> @TimeViewHelper.FormatKst(row.LatestSubmission.SubmittedAt)</div>
-                            <div><strong>Status:</strong> @row.LatestSubmission.Status</div>
-                            <div><strong>Deleted:</strong> @row.LatestSubmission.IsDeleted</div>
-                        }
-                    </td>
-                    <td>
-                        @if (row.EffectiveSubmission is null)
-                        {
-                            <span>-</span>
-                        }
-                        else
-                        {
-                            <div><strong>Id:</strong> @row.EffectiveSubmission.Id</div>
-                            <div><strong>Time:</strong> @TimeViewHelper.FormatKst(row.EffectiveSubmission.SubmittedAt)</div>
-                            <div><strong>Status:</strong> @row.EffectiveSubmission.Status</div>
-                            <div><strong>Late:</strong> @row.EffectiveSubmission.IsLate</div>
-                        }
-                    </td>
-                    <td>
-                        @if (row.IsReadyForFreeze)
-                        {
-                            <strong>@row.EffectiveStatus</strong>
-                        }
-                        else
-                        {
-                            <span>@row.EffectiveStatus</span>
-                        }
-                    </td>
-                    <td>
-                        @if (row.HasLateSubmission)
-                        {
-                            <div>Late submission exists</div>
-                        }
-
-                        @if (row.HasValidationFailure)
-                        {
-                            <div>Validation failure exists</div>
-                        }
-
-                        @if (!row.HasLateSubmission && !row.HasValidationFailure)
-                        {
-                            <span>-</span>
-                        }
-                    </td>
-                    <td>@row.Reason</td>
-                    <td>
-                        @if (row.EffectiveSubmission is null)
-                        {
-                            <span>-</span>
-                        }
-                        else
-                        {
-                            <div><strong>Selected:</strong> @row.EffectiveSubmission.IsSelectedForFreeze</div>
-                            <div><strong>Status:</strong> @row.EffectiveSubmission.FreezeStatus</div>
-
-                            @if (row.EffectiveSubmission.FrozenAt.HasValue)
+                    <th>Student No</th>
+                    <th>Name</th>
+                    <th>Total</th>
+                    <th>Deleted</th>
+                    <th>Latest Submission</th>
+                    <th>Effective Submission</th>
+                    <th>Effective Status</th>
+                    <th>Flags</th>
+                    <th>Reason</th>
+                    <th>Freeze</th>
+                    <th>Items</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Summary.Rows)
+                {
+                    <tr>
+                        <td class="nowrap"><strong>@row.StudentNo</strong></td>
+                        <td>@row.StudentName</td>
+                        <td>@row.TotalSubmissionCount</td>
+                        <td>@row.DeletedSubmissionCount</td>
+                        <td>
+                            @if (row.LatestSubmission is null)
                             {
-                                <div><strong>Frozen at:</strong> @TimeViewHelper.FormatKst(row.EffectiveSubmission.FrozenAt.Value)</div>
+                                <span class="text-muted">-</span>
+                            }
+                            else
+                            {
+                                <div class="kv">
+                                    <div class="kv-key">Id</div>
+                                    <div class="kv-value">@row.LatestSubmission.Id</div>
+                                    <div class="kv-key">Time</div>
+                                    <div class="kv-value nowrap">@TimeViewHelper.FormatKst(row.LatestSubmission.SubmittedAt)</div>
+                                    <div class="kv-key">Status</div>
+                                    <div class="kv-value">@row.LatestSubmission.Status</div>
+                                    <div class="kv-key">Deleted</div>
+                                    <div class="kv-value">@row.LatestSubmission.IsDeleted</div>
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @if (row.EffectiveSubmission is null)
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                            else
+                            {
+                                <div class="kv">
+                                    <div class="kv-key">Id</div>
+                                    <div class="kv-value">@row.EffectiveSubmission.Id</div>
+                                    <div class="kv-key">Time</div>
+                                    <div class="kv-value nowrap">@TimeViewHelper.FormatKst(row.EffectiveSubmission.SubmittedAt)</div>
+                                    <div class="kv-key">Status</div>
+                                    <div class="kv-value">@row.EffectiveSubmission.Status</div>
+                                    <div class="kv-key">Late</div>
+                                    <div class="kv-value">@row.EffectiveSubmission.IsLate</div>
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @if (row.IsReadyForFreeze)
+                            {
+                                <span class="badge badge-success">@row.EffectiveStatus</span>
+                            }
+                            else if (row.EffectiveStatus == "Missing")
+                            {
+                                <span class="badge badge-muted">@row.EffectiveStatus</span>
+                            }
+                            else if (row.EffectiveStatus == "Late Only")
+                            {
+                                <span class="badge badge-warning">@row.EffectiveStatus</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-error">@row.EffectiveStatus</span>
+                            }
+                        </td>
+                        <td>
+                            @if (row.HasLateSubmission)
+                            {
+                                <div><span class="badge badge-warning">Late exists</span></div>
                             }
 
-                            @if (!string.IsNullOrWhiteSpace(row.EffectiveSubmission.FreezeMessage))
+                            @if (row.HasValidationFailure)
                             {
-                                <div><strong>Message:</strong> @row.EffectiveSubmission.FreezeMessage</div>
+                                <div><span class="badge badge-error">Validation failed</span></div>
                             }
-                        }
-                    </td>
-                    <td>
-                        @if (row.EffectiveSubmission is null || row.EffectiveSubmission.Items.Count == 0)
-                        {
-                            <span>-</span>
-                        }
-                        else
-                        {
-                            @foreach (var item in row.EffectiveSubmission.Items)
-                            {
-                                <div style="margin-bottom: 0.75rem;">
-                                    <div><strong>Item Id:</strong> @item.Id</div>
-                                    <div><strong>URL:</strong> <span style="word-break: break-all;">@item.OriginalUrl</span></div>
-                                    <div><strong>Kind:</strong> @item.UrlKind</div>
-                                    <div><strong>Repo:</strong> @item.Owner / @item.Repo</div>
-                                    <div>
-                                        <strong>Branch:</strong>
-                                        @(string.IsNullOrWhiteSpace(item.Branch) ? "(default)" : item.Branch)
-                                    </div>
-                                    <div><strong>Path:</strong> @(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</div>
-                                    <div><strong>Main file:</strong> @item.MainFilePath</div>
-                                    <div><strong>Status:</strong> @item.Status</div>
-                                    <div><strong>Observed SHA:</strong> @(item.ObservedSha ?? "-")</div>
-                                    <div><strong>Final SHA:</strong> @(item.FinalSha ?? "-")</div>
-                                    <div><strong>Snapshot:</strong> @(item.SnapshotPath ?? "-")</div>
 
-                                    @if (item.FrozenAt.HasValue)
+                            @if (!row.HasLateSubmission && !row.HasValidationFailure)
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>@row.Reason</td>
+                        <td>
+                            @if (row.EffectiveSubmission is null)
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                            else
+                            {
+                                <div class="kv kv-wide">
+                                    <div class="kv-key">Selected</div>
+                                    <div class="kv-value">@row.EffectiveSubmission.IsSelectedForFreeze</div>
+
+                                    <div class="kv-key">Status</div>
+                                    <div class="kv-value">@row.EffectiveSubmission.FreezeStatus</div>
+
+                                    @if (row.EffectiveSubmission.FrozenAt.HasValue)
                                     {
-                                        <div><strong>Item frozen at:</strong> @TimeViewHelper.FormatKst(item.FrozenAt.Value)</div>
+                                        <div class="kv-key">Frozen at</div>
+                                        <div class="kv-value nowrap">@TimeViewHelper.FormatKst(row.EffectiveSubmission.FrozenAt.Value)</div>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(row.EffectiveSubmission.FreezeMessage))
+                                    {
+                                        <div class="kv-key">Message</div>
+                                        <div class="kv-value break-all">@row.EffectiveSubmission.FreezeMessage</div>
                                     }
                                 </div>
                             }
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                        </td>
+                        <td>
+                            @if (row.EffectiveSubmission is null || row.EffectiveSubmission.Items.Count == 0)
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                            else
+                            {
+                                @foreach (var item in row.EffectiveSubmission.Items)
+                                {
+                                    <div class="item-block">
+                                        <div class="kv kv-wide">
+                                            <div class="kv-key">Item Id</div>
+                                            <div class="kv-value">@item.Id</div>
+
+                                            <div class="kv-key">URL</div>
+                                            <div class="kv-value break-all">@item.OriginalUrl</div>
+
+                                            <div class="kv-key">Kind</div>
+                                            <div class="kv-value">@item.UrlKind</div>
+
+                                            <div class="kv-key">Repo</div>
+                                            <div class="kv-value">@item.Owner / @item.Repo</div>
+
+                                            <div class="kv-key">Branch</div>
+                                            <div class="kv-value">@(string.IsNullOrWhiteSpace(item.Branch) ? "(default)" : item.Branch)</div>
+
+                                            <div class="kv-key">Path</div>
+                                            <div class="kv-value break-all">@(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</div>
+
+                                            <div class="kv-key">Main file</div>
+                                            <div class="kv-value">@item.MainFilePath</div>
+
+                                            <div class="kv-key">Status</div>
+                                            <div class="kv-value">@item.Status</div>
+
+                                            <div class="kv-key">Observed SHA</div>
+                                            <div class="kv-value break-all">@(item.ObservedSha ?? "-")</div>
+
+                                            <div class="kv-key">Final SHA</div>
+                                            <div class="kv-value break-all">@(item.FinalSha ?? "-")</div>
+
+                                            <div class="kv-key">Snapshot</div>
+                                            <div class="kv-value break-all">@(item.SnapshotPath ?? "-")</div>
+
+                                            @if (item.FrozenAt.HasValue)
+                                            {
+                                                <div class="kv-key">Item frozen at</div>
+                                                <div class="kv-value nowrap">@TimeViewHelper.FormatKst(item.FrozenAt.Value)</div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }

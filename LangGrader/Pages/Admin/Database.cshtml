@@ -1,258 +1,296 @@
-﻿@page
+@page
 @model LangGrader.Pages.Admin.DatabaseModel
 @{
     ViewData["Title"] = "Database Viewer";
 }
 
-<h1>Database Viewer</h1>
+<h1 class="page-title">Database Viewer</h1>
+<p class="page-subtitle">This page is read-only. Deleted submissions are included for audit purposes.</p>
 
-<p>
-    This page is read-only. Deleted submissions are included for audit purposes.
-</p>
+<div class="toolbar">
+    <a class="button button-secondary" asp-page="/Admin/Submissions">Submission Summary</a>
+    <a class="button button-secondary" asp-page="/Assignments/Index">Back to Assignments</a>
+</div>
 
-<p>
-    <a asp-page="/Assignments/Index">Back to Assignments</a>
-</p>
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Students</div>
+        <div class="stat-value">@Model.Students.Count</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Assignments</div>
+        <div class="stat-value">@Model.Assignments.Count</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Submissions</div>
+        <div class="stat-value">@Model.Submissions.Count</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Items</div>
+        <div class="stat-value">@Model.SubmissionItems.Count</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Events</div>
+        <div class="stat-value">@Model.SubmissionEvents.Count</div>
+    </div>
+</div>
 
-<hr />
-
-<h2>Summary</h2>
-
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Table</th>
-            <th>Row Count</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Students</td>
-            <td>@Model.Students.Count</td>
-        </tr>
-        <tr>
-            <td>Assignments</td>
-            <td>@Model.Assignments.Count</td>
-        </tr>
-        <tr>
-            <td>Submissions</td>
-            <td>@Model.Submissions.Count</td>
-        </tr>
-        <tr>
-            <td>SubmissionItems</td>
-            <td>@Model.SubmissionItems.Count</td>
-        </tr>
-        <tr>
-            <td>SubmissionEvents</td>
-            <td>@Model.SubmissionEvents.Count</td>
-        </tr>
-    </tbody>
-</table>
-
-<hr />
-
-<h2>Students</h2>
-
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Student No</th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Active</th>
-            <th>Must Change Password</th>
-            <th>Created At</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var student in Model.Students)
-        {
+<h2 class="section-title">Students</h2>
+<div class="table-wrap">
+    <table class="table-compact">
+        <thead>
             <tr>
-                <td>@student.Id</td>
-                <td>@student.StudentNo</td>
-                <td>@student.Name</td>
-                <td>@student.Role</td>
-                <td>@student.IsActive</td>
-                <td>@student.MustChangePassword</td>
-                <td>@TimeViewHelper.FormatKst(student.CreatedAt)</td>
+                <th>Id</th>
+                <th>Student No</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Active</th>
+                <th>Must Change Password</th>
+                <th>Created At</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var student in Model.Students)
+            {
+                <tr>
+                    <td>@student.Id</td>
+                    <td><strong>@student.StudentNo</strong></td>
+                    <td>@student.Name</td>
+                    <td>
+                        @if (student.Role == "Admin")
+                        {
+                            <span class="badge badge-info">Admin</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-muted">@student.Role</span>
+                        }
+                    </td>
+                    <td>@student.IsActive</td>
+                    <td>@student.MustChangePassword</td>
+                    <td class="nowrap">@TimeViewHelper.FormatKst(student.CreatedAt)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 
-<hr />
-
-<h2>Assignments</h2>
-
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Title</th>
-            <th>Open At</th>
-            <th>Deadline</th>
-            <th>Published</th>
-            <th>Frozen</th>
-            <th>Frozen At</th>
-            <th>Freeze Root Path</th>
-            <th>Required Files</th>
-            <th>Main File Candidates</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var assignment in Model.Assignments)
-        {
+<h2 class="section-title">Assignments</h2>
+<div class="table-wrap">
+    <table class="table-compact">
+        <thead>
             <tr>
-                <td>@assignment.Id</td>
-                <td>@assignment.Title</td>
-                <td>@TimeViewHelper.FormatKst(assignment.OpenAt)</td>
-                <td>@TimeViewHelper.FormatKst(assignment.DeadlineAt)</td>
-                <td>@assignment.IsPublished</td>
-                <td>@assignment.IsFrozen</td>
-                <td>
-                    @if (assignment.FrozenAt.HasValue)
-                    {
-                        @TimeViewHelper.FormatKst(assignment.FrozenAt.Value)
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </td>
-                <td style="max-width: 420px; word-break: break-all;">
-                    @(assignment.FreezeRootPath ?? "-")
-                </td>
-                <td><code>@assignment.RequiredFilesJson</code></td>
-                <td><code>@assignment.MainFileCandidatesJson</code></td>
+                <th>Id</th>
+                <th>Title</th>
+                <th>Open At</th>
+                <th>Deadline</th>
+                <th>Published</th>
+                <th>Frozen</th>
+                <th>Frozen At</th>
+                <th>Freeze Root Path</th>
+                <th>Required Files</th>
+                <th>Main File Candidates</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var assignment in Model.Assignments)
+            {
+                <tr>
+                    <td>@assignment.Id</td>
+                    <td><strong>@assignment.Title</strong></td>
+                    <td class="nowrap">@TimeViewHelper.FormatKst(assignment.OpenAt)</td>
+                    <td class="nowrap">@TimeViewHelper.FormatKst(assignment.DeadlineAt)</td>
+                    <td>
+                        @if (assignment.IsPublished)
+                        {
+                            <span class="badge badge-success">Published</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-muted">Hidden</span>
+                        }
+                    </td>
+                    <td>
+                        @if (assignment.IsFrozen)
+                        {
+                            <span class="badge badge-info">Frozen</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-muted">Not Frozen</span>
+                        }
+                    </td>
+                    <td class="nowrap">
+                        @if (assignment.FrozenAt.HasValue)
+                        {
+                            @TimeViewHelper.FormatKst(assignment.FrozenAt.Value)
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </td>
+                    <td class="break-all">@(assignment.FreezeRootPath ?? "-")</td>
+                    <td><code>@assignment.RequiredFilesJson</code></td>
+                    <td><code>@assignment.MainFileCandidatesJson</code></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 
-<hr />
-
-<h2>Submissions</h2>
-
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Assignment</th>
-            <th>Student</th>
-            <th>Submitted At</th>
-            <th>Status</th>
-            <th>Late</th>
-            <th>Deleted</th>
-            <th>Deleted At</th>
-            <th>Item Count</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var submission in Model.Submissions)
-        {
+<h2 class="section-title">Submissions</h2>
+<div class="table-wrap">
+    <table class="table-compact">
+        <thead>
             <tr>
-                <td>@submission.Id</td>
-                <td>@submission.Assignment.Title</td>
-                <td>@submission.Student.StudentNo / @submission.Student.Name</td>
-                <td>@TimeViewHelper.FormatKst(submission.SubmittedAt)</td>
-                <td>@submission.Status</td>
-                <td>@submission.IsLate</td>
-                <td>@submission.IsDeleted</td>
-                <td>
-                    @if (submission.DeletedAt.HasValue)
-                    {
-                        @TimeViewHelper.FormatKst(submission.DeletedAt.Value)
-                    }
-                    else
-                    {
-                        <span>-</span>
-                    }
-                </td>
-                <td>@submission.Items.Count</td>
+                <th>Id</th>
+                <th>Assignment</th>
+                <th>Student</th>
+                <th>Submitted At</th>
+                <th>Status</th>
+                <th>Late</th>
+                <th>Deleted</th>
+                <th>Deleted At</th>
+                <th>Item Count</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var submission in Model.Submissions)
+            {
+                <tr>
+                    <td>@submission.Id</td>
+                    <td>@submission.Assignment.Title</td>
+                    <td>@submission.Student.StudentNo / @submission.Student.Name</td>
+                    <td class="nowrap">@TimeViewHelper.FormatKst(submission.SubmittedAt)</td>
+                    <td>
+                        @if (submission.Status == "Valid")
+                        {
+                            <span class="badge badge-success">@submission.Status</span>
+                        }
+                        else if (submission.Status == "Deleted")
+                        {
+                            <span class="badge badge-muted">@submission.Status</span>
+                        }
+                        else if (submission.Status == "ValidationFailed" || submission.Status == "FreezeFailed")
+                        {
+                            <span class="badge badge-error">@submission.Status</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-info">@submission.Status</span>
+                        }
+                    </td>
+                    <td>@submission.IsLate</td>
+                    <td>@submission.IsDeleted</td>
+                    <td class="nowrap">
+                        @if (submission.DeletedAt.HasValue)
+                        {
+                            @TimeViewHelper.FormatKst(submission.DeletedAt.Value)
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </td>
+                    <td>@submission.Items.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 
-<hr />
-
-<h2>Submission Items</h2>
-
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Submission Id</th>
-            <th>Student</th>
-            <th>Assignment</th>
-            <th>URL</th>
-            <th>Kind</th>
-            <th>Owner</th>
-            <th>Repo</th>
-            <th>Branch</th>
-            <th>Path</th>
-            <th>Main File</th>
-            <th>Status</th>
-            <th>Observed SHA</th>
-            <th>Final SHA</th>
-            <th>Snapshot Path</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.SubmissionItems)
-        {
+<h2 class="section-title">Submission Items</h2>
+<div class="table-wrap">
+    <table class="table-compact">
+        <thead>
             <tr>
-                <td>@item.Id</td>
-                <td>@item.SubmissionId</td>
-                <td>@item.Submission.Student.StudentNo / @item.Submission.Student.Name</td>
-                <td>@item.Submission.Assignment.Title</td>
-                <td style="max-width: 360px; word-break: break-all;">
-                    @item.OriginalUrl
-                </td>
-                <td>@item.UrlKind</td>
-                <td>@item.Owner</td>
-                <td>@item.Repo</td>
-                <td>@item.Branch</td>
-                <td>@(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</td>
-                <td>@item.MainFilePath</td>
-                <td>@item.Status</td>
-                <td>@(item.ObservedSha ?? "-")</td>
-                <td>@(item.FinalSha ?? "-")</td>
-                <td>@(item.SnapshotPath ?? "-")</td>
+                <th>Id</th>
+                <th>Submission Id</th>
+                <th>Student</th>
+                <th>Assignment</th>
+                <th>URL</th>
+                <th>Kind</th>
+                <th>Owner</th>
+                <th>Repo</th>
+                <th>Branch</th>
+                <th>Path</th>
+                <th>Main File</th>
+                <th>Status</th>
+                <th>Observed SHA</th>
+                <th>Final SHA</th>
+                <th>Snapshot Path</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.SubmissionItems)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.SubmissionId</td>
+                    <td>@item.Submission.Student.StudentNo / @item.Submission.Student.Name</td>
+                    <td>@item.Submission.Assignment.Title</td>
+                    <td class="break-all">@item.OriginalUrl</td>
+                    <td>@item.UrlKind</td>
+                    <td>@item.Owner</td>
+                    <td>@item.Repo</td>
+                    <td>@item.Branch</td>
+                    <td class="break-all">@(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</td>
+                    <td>@item.MainFilePath</td>
+                    <td>
+                        @if (item.Status == "Valid")
+                        {
+                            <span class="badge badge-success">@item.Status</span>
+                        }
+                        else if (item.Status == "Deleted")
+                        {
+                            <span class="badge badge-muted">@item.Status</span>
+                        }
+                        else if (item.Status.Contains("Failed") || item.Status.Contains("NotFound") || item.Status == "InvalidUrl")
+                        {
+                            <span class="badge badge-error">@item.Status</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-info">@item.Status</span>
+                        }
+                    </td>
+                    <td class="break-all">@(item.ObservedSha ?? "-")</td>
+                    <td class="break-all">@(item.FinalSha ?? "-")</td>
+                    <td class="break-all">@(item.SnapshotPath ?? "-")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 
-<hr />
-
-<h2>Submission Events</h2>
-
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Submission Item Id</th>
-            <th>Student</th>
-            <th>Event Type</th>
-            <th>Message</th>
-            <th>Raw Log Path</th>
-            <th>Created At</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var ev in Model.SubmissionEvents)
-        {
+<h2 class="section-title">Submission Events</h2>
+<div class="table-wrap">
+    <table class="table-compact">
+        <thead>
             <tr>
-                <td>@ev.Id</td>
-                <td>@ev.SubmissionItemId</td>
-                <td>@ev.SubmissionItem.Submission.Student.StudentNo / @ev.SubmissionItem.Submission.Student.Name</td>
-                <td>@ev.EventType</td>
-                <td>@ev.Message</td>
-                <td>@(ev.RawLogPath ?? "-")</td>
-                <td>@TimeViewHelper.FormatKst(ev.CreatedAt)</td>
+                <th>Id</th>
+                <th>Submission Item Id</th>
+                <th>Student</th>
+                <th>Event Type</th>
+                <th>Message</th>
+                <th>Raw Log Path</th>
+                <th>Created At</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var ev in Model.SubmissionEvents)
+            {
+                <tr>
+                    <td>@ev.Id</td>
+                    <td>@ev.SubmissionItemId</td>
+                    <td>@ev.SubmissionItem.Submission.Student.StudentNo / @ev.SubmissionItem.Submission.Student.Name</td>
+                    <td><span class="badge badge-info">@ev.EventType</span></td>
+                    <td class="break-all">@ev.Message</td>
+                    <td class="break-all">@(ev.RawLogPath ?? "-")</td>
+                    <td class="nowrap">@TimeViewHelper.FormatKst(ev.CreatedAt)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

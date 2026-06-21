@@ -1,32 +1,35 @@
-﻿@page
+@page
 @model LangGrader.Pages.LoginModel
 @{
     ViewData["Title"] = "Login";
 }
 
-<h1>Login</h1>
+<h1 class="page-title">Login</h1>
+<p class="page-subtitle">Sign in with your student number or administrator ID.</p>
 
-@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-{
-    <div style="color: red; margin-bottom: 1rem;">
-        @Model.ErrorMessage
-    </div>
-}
+<div class="card">
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="message message-error">
+            @Model.ErrorMessage
+        </div>
+    }
 
-<form method="post">
-    <input type="hidden" asp-for="ReturnUrl" />
+    <form method="post" class="form-grid">
+        <input type="hidden" asp-for="ReturnUrl" />
 
-    <div>
-        <label asp-for="Input.StudentNo">Student Number or Admin ID</label><br />
-        <input asp-for="Input.StudentNo" />
-    </div>
+        <div class="form-row">
+            <label asp-for="Input.StudentNo">Student Number or Admin ID</label>
+            <input asp-for="Input.StudentNo" autocomplete="username" />
+        </div>
 
-    <div style="margin-top: 0.75rem;">
-        <label asp-for="Input.Password">Password</label><br />
-        <input asp-for="Input.Password" type="password" />
-    </div>
+        <div class="form-row">
+            <label asp-for="Input.Password">Password</label>
+            <input asp-for="Input.Password" type="password" autocomplete="current-password" />
+        </div>
 
-    <div style="margin-top: 1rem;">
-        <button type="submit">Login</button>
-    </div>
-</form>
+        <div class="toolbar">
+            <button type="submit" class="button-primary">Login</button>
+        </div>
+    </form>
+</div>

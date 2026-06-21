@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -8,30 +8,30 @@
 </head>
 <body>
     <header class="app-header">
-        <div>
-            <span class="app-title">LangGrader</span>
-        </div>
+        <div class="app-header-inner">
+            <a class="app-title" asp-page="/Index">LangGrader</a>
 
-        <nav class="app-nav">
-            <a class="button button-secondary button-small" asp-page="/Index">Home</a>
+            <nav class="app-nav">
+                <a class="button button-secondary button-small" asp-page="/Index">Home</a>
 
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <a class="button button-secondary button-small" asp-page="/Assignments/Index">Assignments</a>
-
-                @if (User.IsInRole("Admin"))
+                @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <a class="button button-secondary button-small" asp-page="/Admin/Submissions">Submissions</a>
-                    <a class="button button-secondary button-small" asp-page="/Admin/Database">Database</a>
-                }
+                    <a class="button button-secondary button-small" asp-page="/Assignments/Index">Assignments</a>
 
-                <a class="button button-secondary button-small" asp-page="/Logout">Logout</a>
-            }
-            else
-            {
-                <a class="button button-primary button-small" asp-page="/Login">Login</a>
-            }
-        </nav>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a class="button button-secondary button-small" asp-page="/Admin/Submissions">Submissions</a>
+                        <a class="button button-secondary button-small" asp-page="/Admin/Database">Database</a>
+                    }
+
+                    <a class="button button-secondary button-small" asp-page="/Logout">Logout</a>
+                }
+                else
+                {
+                    <a class="button button-primary button-small" asp-page="/Login">Login</a>
+                }
+            </nav>
+        </div>
     </header>
 
     <main class="app-main">

@@ -1,121 +1,151 @@
-﻿@page "{id:long}"
+@page "{id:long}"
 @model LangGrader.Pages.Assignments.SubmitModel
 @{
     ViewData["Title"] = "Submit Assignment";
 }
 
-<h1>Submit: @Model.AssignmentTitle</h1>
-
-<p>
-    Deadline:
-    @Model.DeadlineText
-</p>
+<h1 class="page-title">Submit: @Model.AssignmentTitle</h1>
+<p class="page-subtitle">Deadline: <strong>@Model.DeadlineText</strong></p>
 
 @if (!string.IsNullOrWhiteSpace(Model.Message))
 {
-    <div style="color: green; margin-bottom: 1rem;">
+    <div class="message message-success">
         @Model.Message
     </div>
 }
 
 @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
 {
-    <div style="color: red; margin-bottom: 1rem;">
+    <div class="message message-error">
         @Model.ErrorMessage
     </div>
 }
 
-<form method="post">
-    <div id="url-list">
-        @for (var i = 0; i < Model.Input.Items.Count; i++)
-        {
-            <div class="url-row" style="border: 1px solid #ccc; padding: 0.75rem; margin-bottom: 0.75rem;">
-                <div>
-                    <label>GitHub URL</label><br />
-                    <input name="Input.Items[@i].Url"
-                           value="@Model.Input.Items[i].Url"
-                           style="width: 600px;"
-                           placeholder="https://github.com/owner/repo or https://github.com/owner/repo/tree/main/folder" />
+<div class="card">
+    <h2 class="card-title">Submit GitHub URLs</h2>
+
+    <form method="post" class="form-grid submit-form">
+        <div id="url-list">
+            @for (var i = 0; i < Model.Input.Items.Count; i++)
+            {
+                <div class="url-row">
+                    <div class="form-row">
+                        <label>GitHub URL</label>
+                        <input name="Input.Items[@i].Url"
+                               value="@Model.Input.Items[i].Url"
+                               placeholder="https://github.com/owner/repo or https://github.com/owner/repo/tree/main/folder" />
+                        <div class="field-help">Repository, folder, file, and raw GitHub URLs are supported.</div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Main file path</label>
+                        <input name="Input.Items[@i].MainFilePath"
+                               value="@Model.Input.Items[i].MainFilePath"
+                               placeholder="main.c" />
+                    </div>
                 </div>
+            }
+        </div>
 
-                <div style="margin-top: 0.5rem;">
-                    <label>Main file path</label><br />
-                    <input name="Input.Items[@i].MainFilePath"
-                           value="@Model.Input.Items[i].MainFilePath"
-                           style="width: 300px;"
-                           placeholder="main.c" />
-                </div>
-            </div>
-        }
-    </div>
-
-    <button type="button" onclick="addUrlRow()">Add URL</button>
-
-    <div style="margin-top: 1rem;">
-        <button type="submit">Submit</button>
-        <a asp-page="/Assignments/Index">Back to Assignments</a>
-    </div>
-</form>
-
-<hr />
+        <div class="toolbar">
+            <button type="button" class="button-secondary" onclick="addUrlRow()">Add URL</button>
+            <button type="submit" class="button-primary">Submit</button>
+            <a class="button button-secondary" asp-page="/Assignments/Index">Back to Assignments</a>
+        </div>
+    </form>
+</div>
 
 @if (Model.PreviousSubmissions.Count > 0)
 {
-    <h2>Previous Submissions</h2>
+    <h2 class="section-title">Previous Submissions</h2>
 
-    <table border="1" cellpadding="8" cellspacing="0">
-        <thead>
-            <tr>
-                <th>Submitted At</th>
-                <th>Status</th>
-                <th>Items</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var submission in Model.PreviousSubmissions)
-            {
+    <div class="table-wrap">
+        <table>
+            <thead>
                 <tr>
-                    <td>@TimeViewHelper.FormatKst(submission.SubmittedAt)</td>
-                    <td>@submission.Status</td>
-                    <td>
-                        @foreach (var item in submission.Items)
-                        {
-                            <div style="margin-bottom: 0.75rem;">
-                                <div><strong>URL:</strong> @item.OriginalUrl</div>
-                                <div><strong>Kind:</strong> @item.UrlKind</div>
-                                <div><strong>Owner:</strong> @item.Owner</div>
-                                <div><strong>Repo:</strong> @item.Repo</div>
-                                <div>
-                                    <strong>Branch:</strong>
-                                    @(string.IsNullOrWhiteSpace(item.Branch) ? "(default)" : item.Branch)
-                                </div>
-                                <div><strong>Path:</strong> @(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</div>
-                                <div><strong>Main file:</strong> @item.MainFilePath</div>
-                                <div><strong>Status:</strong> @item.Status</div>
-                            </div>
-                        }
-                    </td>
-                    <td>
-                        @if (!Model.IsAssignmentFrozen)
-                        {
-                            <form method="post"
-                                  asp-page-handler="Delete"
-                                  asp-route-id="@Model.AssignmentId"
-                                  asp-route-submissionId="@submission.Id"
-                                  onsubmit="return confirm('Delete this submission?');">
-                                <button type="submit">Delete</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <span>Locked</span>
-                        }
-                    </td>
+                    <th>Submitted At</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Action</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var submission in Model.PreviousSubmissions)
+                {
+                    <tr>
+                        <td class="nowrap">@TimeViewHelper.FormatKst(submission.SubmittedAt)</td>
+                        <td>
+                            @if (submission.Status == "Valid")
+                            {
+                                <span class="badge badge-success">@submission.Status</span>
+                            }
+                            else if (submission.Status == "Deleted")
+                            {
+                                <span class="badge badge-muted">@submission.Status</span>
+                            }
+                            else if (submission.Status == "ValidationFailed")
+                            {
+                                <span class="badge badge-error">@submission.Status</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-info">@submission.Status</span>
+                            }
+                        </td>
+                        <td>
+                            @foreach (var item in submission.Items)
+                            {
+                                <div class="item-block">
+                                    <div class="kv kv-wide">
+                                        <div class="kv-key">URL</div>
+                                        <div class="kv-value break-all">@item.OriginalUrl</div>
+
+                                        <div class="kv-key">Kind</div>
+                                        <div class="kv-value">@item.UrlKind</div>
+
+                                        <div class="kv-key">Owner</div>
+                                        <div class="kv-value">@item.Owner</div>
+
+                                        <div class="kv-key">Repo</div>
+                                        <div class="kv-value">@item.Repo</div>
+
+                                        <div class="kv-key">Branch</div>
+                                        <div class="kv-value">@(string.IsNullOrWhiteSpace(item.Branch) ? "(default)" : item.Branch)</div>
+
+                                        <div class="kv-key">Path</div>
+                                        <div class="kv-value break-all">@(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</div>
+
+                                        <div class="kv-key">Main file</div>
+                                        <div class="kv-value">@item.MainFilePath</div>
+
+                                        <div class="kv-key">Status</div>
+                                        <div class="kv-value">@item.Status</div>
+                                    </div>
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @if (!Model.IsAssignmentFrozen)
+                            {
+                                <form method="post"
+                                      class="inline-form"
+                                      asp-page-handler="Delete"
+                                      asp-route-id="@Model.AssignmentId"
+                                      asp-route-submissionId="@submission.Id"
+                                      onsubmit="return confirm('Delete this submission?');">
+                                    <button type="submit" class="button-danger button-small">Delete</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="badge badge-muted">Locked</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @section Scripts {
@@ -126,22 +156,18 @@
 
             const div = document.createElement("div");
             div.className = "url-row";
-            div.style.border = "1px solid #ccc";
-            div.style.padding = "0.75rem";
-            div.style.marginBottom = "0.75rem";
 
             div.innerHTML = `
-                <div>
-                    <label>GitHub URL</label><br />
+                <div class="form-row">
+                    <label>GitHub URL</label>
                     <input name="Input.Items[${index}].Url"
-                           style="width: 600px;"
                            placeholder="https://github.com/owner/repo or https://github.com/owner/repo/tree/main/folder" />
+                    <div class="field-help">Repository, folder, file, and raw GitHub URLs are supported.</div>
                 </div>
 
-                <div style="margin-top: 0.5rem;">
-                    <label>Main file path</label><br />
+                <div class="form-row">
+                    <label>Main file path</label>
                     <input name="Input.Items[${index}].MainFilePath"
-                           style="width: 300px;"
                            placeholder="main.c" />
                 </div>
             `;
