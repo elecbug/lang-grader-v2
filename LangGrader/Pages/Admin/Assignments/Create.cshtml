@@ -1,0 +1,70 @@
+﻿@page
+@model LangGrader.Pages.Admin.Assignments.CreateModel
+@{
+    ViewData["Title"] = "Create Assignment";
+}
+
+<h1 class="page-title">Create Assignment</h1>
+
+<div class="toolbar">
+    <a class="button button-secondary" asp-page="/Admin/Assignments/Index">
+        Back to Assignments
+    </a>
+</div>
+
+<div class="card">
+    <form method="post" class="form-grid">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="All" class="message message-error"></div>
+
+        <div class="form-row">
+            <label asp-for="Input.Title">Title</label>
+            <input asp-for="Input.Title" />
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.Description">Description</label>
+            <textarea asp-for="Input.Description"></textarea>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.OpenAtKst">Open time (KST)</label>
+            <input asp-for="Input.OpenAtKst" type="datetime-local" />
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.DeadlineAtKst">Deadline (KST)</label>
+            <input asp-for="Input.DeadlineAtKst" type="datetime-local" />
+        </div>
+
+        <div class="form-row">
+            <label>
+                <input asp-for="Input.IsPublished" />
+                Published
+            </label>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.RequiredFilesJson">Required files JSON</label>
+            <textarea asp-for="Input.RequiredFilesJson"></textarea>
+            <div class="text-muted">
+                Example: ["main.c", "my_fraction.c", "my_fraction.h"]
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.MainFileCandidatesJson">Main file candidates JSON</label>
+            <textarea asp-for="Input.MainFileCandidatesJson"></textarea>
+            <div class="text-muted">
+                Example: ["main.c", "assignment13.c"]
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button type="submit" class="button-primary">
+                Create Assignment
+            </button>
+        </div>
+    </form>
+</div>

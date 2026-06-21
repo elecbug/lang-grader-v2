@@ -1,0 +1,121 @@
+﻿@page "{id:long}"
+@model LangGrader.Pages.Admin.Assignments.EditModel
+@{
+    ViewData["Title"] = "Edit Assignment";
+}
+
+<h1 class="page-title">Edit Assignment</h1>
+
+<div class="toolbar">
+    <a class="button button-secondary" asp-page="/Admin/Assignments/Index">
+        Back to Assignments
+    </a>
+
+    <a class="button button-secondary"
+       asp-page="/Admin/Submissions"
+       asp-route-assignmentId="@Model.Id">
+        View Submissions
+    </a>
+</div>
+
+@if (Model.Assignment is not null && Model.Assignment.IsFrozen)
+{
+    <div class="message message-warning">
+        This assignment is frozen. Unfreeze it before editing assignment settings.
+    </div>
+}
+
+<div class="card">
+    <form method="post" class="form-grid">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="All" class="message message-error"></div>
+
+        <div class="form-row">
+            <label asp-for="Input.Title">Title</label>
+            <input asp-for="Input.Title" disabled="@(Model.Assignment?.IsFrozen == true)" />
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.Description">Description</label>
+            <textarea asp-for="Input.Description" disabled="@(Model.Assignment?.IsFrozen == true)"></textarea>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.OpenAtKst">Open time (KST)</label>
+            <input asp-for="Input.OpenAtKst" type="datetime-local" disabled="@(Model.Assignment?.IsFrozen == true)" />
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.DeadlineAtKst">Deadline (KST)</label>
+            <input asp-for="Input.DeadlineAtKst" type="datetime-local" disabled="@(Model.Assignment?.IsFrozen == true)" />
+        </div>
+
+        <div class="form-row">
+            <label>
+                <input asp-for="Input.IsPublished" disabled="@(Model.Assignment?.IsFrozen == true)" />
+                Published
+            </label>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.RequiredFilesJson">Required files JSON</label>
+            <textarea asp-for="Input.RequiredFilesJson" disabled="@(Model.Assignment?.IsFrozen == true)"></textarea>
+            <div class="text-muted">
+                Example: ["main.c", "my_fraction.c", "my_fraction.h"]
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.MainFileCandidatesJson">Main file candidates JSON</label>
+            <textarea asp-for="Input.MainFileCandidatesJson" disabled="@(Model.Assignment?.IsFrozen == true)"></textarea>
+            <div class="text-muted">
+                Example: ["main.c", "assignment13.c"]
+            </div>
+        </div>
+
+        @if (Model.Assignment is not null)
+        {
+            <div class="card">
+                <h2 class="card-title">Freeze Information</h2>
+
+                <p>
+                    <strong>Frozen:</strong>
+                    @Model.Assignment.IsFrozen
+                </p>
+
+                <p>
+                    <strong>Frozen at:</strong>
+                    @if (Model.Assignment.FrozenAt.HasValue)
+                    {
+                        @TimeViewHelper.FormatKst(Model.Assignment.FrozenAt.Value)
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </p>
+
+                <p class="break-all">
+                    <strong>Freeze root:</strong>
+                    @(Model.Assignment.FreezeRootPath ?? "-")
+                </p>
+            </div>
+        }
+
+        <div class="toolbar">
+            @if (Model.Assignment?.IsFrozen == true)
+            {
+                <button type="submit" class="button-primary" disabled>
+                    Save Changes
+                </button>
+            }
+            else
+            {
+                <button type="submit" class="button-primary">
+                    Save Changes
+                </button>
+            }
+        </div>
+    </form>
+</div>

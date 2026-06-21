@@ -4,7 +4,18 @@
     ViewData["Title"] = "Submit Assignment";
 }
 
-<h1 class="page-title">Submit: @Model.AssignmentTitle</h1>
+<h1 class="page-title">@Model.AssignmentTitle</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.AssignmentDescription))
+{
+    <div class="card">
+        <h2 class="card-title">Assignment Description</h2>
+        <div class="assignment-description">
+            @Model.AssignmentDescription
+        </div>
+    </div>
+}
+
 <p class="page-subtitle">Deadline: <strong>@Model.DeadlineText</strong></p>
 
 @if (!string.IsNullOrWhiteSpace(Model.Message))

@@ -26,6 +26,7 @@ public class SubmitModel : PageModel
     }
 
     public string AssignmentTitle { get; set; } = "";
+    public string AssignmentDescription { get; set; } = "";
     public string DeadlineText { get; set; } = "";
 
     public string? Message { get; set; }
@@ -49,10 +50,7 @@ public class SubmitModel : PageModel
             return NotFound();
         }
 
-        AssignmentId = assignment.Id;
-        AssignmentTitle = assignment.Title;
-        DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
-        IsAssignmentFrozen = assignment.IsFrozen;
+        await LoadPageDataAsync(assignment);
 
         Input.Items.Add(new SubmitItemInput
         {
@@ -74,10 +72,7 @@ public class SubmitModel : PageModel
             return NotFound();
         }
 
-        AssignmentId = assignment.Id;
-        AssignmentTitle = assignment.Title;
-        DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
-        IsAssignmentFrozen = assignment.IsFrozen;
+        await LoadPageDataAsync(assignment);
 
         var studentIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -257,10 +252,7 @@ public class SubmitModel : PageModel
         if (assignment.IsFrozen)
         {
             ErrorMessage = "This assignment has already been frozen.";
-            AssignmentId = assignment.Id;
-            AssignmentTitle = assignment.Title;
-            DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
-            IsAssignmentFrozen = assignment.IsFrozen;
+            await LoadPageDataAsync(assignment);
 
             Input.Items.Add(new SubmitItemInput
             {
@@ -283,6 +275,15 @@ public class SubmitModel : PageModel
         await _db.SaveChangesAsync();
 
         return RedirectToPage("/Assignments/Submit", new { id });
+    }
+
+    private async Task LoadPageDataAsync(Assignment assignment)
+    {
+        AssignmentId = assignment.Id;
+        AssignmentTitle = assignment.Title;
+        AssignmentDescription = assignment.Description;
+        DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
+        IsAssignmentFrozen = assignment.IsFrozen;
     }
 
     private async Task LoadPreviousSubmissionsAsync(long assignmentId)

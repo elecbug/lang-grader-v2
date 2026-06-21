@@ -344,3 +344,27 @@ code {
 .submit-form input[name$=".MainFilePath"] {
     max-width: 420px;
 }
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+.validation-summary-errors {
+    background: var(--error-bg);
+    border-color: #fca5a5;
+}
+
+.assignment-description {
+    margin-top: 6px;
+    color: var(--text-muted);
+    white-space: pre-line;
+    max-width: 760px;
+}

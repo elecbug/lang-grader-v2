@@ -1,0 +1,137 @@
+﻿@page
+@model LangGrader.Pages.Admin.Assignments.IndexModel
+@{
+    ViewData["Title"] = "Manage Assignments";
+}
+
+<h1 class="page-title">Manage Assignments</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <div class="message message-success">
+        @Model.Message
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="message message-error">
+        @Model.ErrorMessage
+    </div>
+}
+
+<div class="toolbar">
+    <a class="button button-primary" asp-page="/Admin/Assignments/Create">
+        Create Assignment
+    </a>
+
+    <a class="button button-secondary" asp-page="/Admin/Submissions">
+        Submission Summary
+    </a>
+
+    <a class="button button-secondary" asp-page="/Admin/Database">
+        Database Viewer
+    </a>
+</div>
+
+@if (Model.Assignments.Count == 0)
+{
+    <div class="message message-info">
+        No assignments found.
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Assignment</th>
+                    <th>Published</th>
+                    <th>Frozen</th>
+                    <th>Open At</th>
+                    <th>Deadline</th>
+                    <th>Freeze Root</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var assignment in Model.Assignments)
+                {
+                    <tr>
+                        <td>@assignment.Id</td>
+                        <td>
+                            <strong>@assignment.Title</strong>
+
+                            @if (!string.IsNullOrWhiteSpace(assignment.Description))
+                            {
+                                <div class="assignment-description">
+                                    @assignment.Description
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @if (assignment.IsPublished)
+                            {
+                                <span class="badge badge-success">Published</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-muted">Hidden</span>
+                            }
+                        </td>
+                        <td>
+                            @if (assignment.IsFrozen)
+                            {
+                                <span class="badge badge-info">Frozen</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-muted">Editable</span>
+                            }
+                        </td>
+                        <td>@TimeViewHelper.FormatKstMinute(assignment.OpenAt)</td>
+                        <td>@TimeViewHelper.FormatKstMinute(assignment.DeadlineAt)</td>
+                        <td class="break-all">
+                            @(assignment.FreezeRootPath ?? "-")
+                        </td>
+                        <td>
+                            <div class="toolbar">
+                                <a class="button button-primary button-small"
+                                   asp-page="/Admin/Assignments/Edit"
+                                   asp-route-id="@assignment.Id">
+                                    Edit
+                                </a>
+
+                                <a class="button button-secondary button-small"
+                                   asp-page="/Admin/Submissions"
+                                   asp-route-assignmentId="@assignment.Id">
+                                    Submissions
+                                </a>
+
+                                <form method="post"
+                                      class="inline-form"
+                                      asp-page-handler="TogglePublished"
+                                      asp-route-id="@assignment.Id">
+                                    @if (assignment.IsPublished)
+                                    {
+                                        <button type="submit" class="button-warning button-small">
+                                            Unpublish
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="button-primary button-small">
+                                            Publish
+                                        </button>
+                                    }
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
