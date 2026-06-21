@@ -1,0 +1,118 @@
+﻿@page "{id:long}"
+@model LangGrader.Pages.Assignments.SubmitModel
+@{
+    ViewData["Title"] = "Assignment Submission";
+}
+
+<h1>Submit @Model.AssignmentTitle</h1>
+
+<p>
+    Deadline:
+    @Model.DeadlineText     
+</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <div style="color: green; margin-bottom: 1rem;">
+        @Model.Message
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div style="color: red; margin-bottom: 1rem;">
+        @Model.ErrorMessage
+    </div>
+}
+
+<form method="post">
+    <div id="url-list">
+        @for (var i = 0; i < Model.Input.Items.Count; i++)
+        {
+            <div class="url-row" style="border: 1px solid #ccc; padding: 0.75rem; margin-bottom: 0.75rem;">
+                <div>
+                    <label>GitHub URL</label><br />
+                    <input name="Input.Items[@i].Url"
+                           value="@Model.Input.Items[i].Url"
+                           style="width: 600px;"
+                           placeholder="https://github.com/owner/repo or https://github.com/owner/repo/tree/main/folder" />
+                </div>
+
+                <div style="margin-top: 0.5rem;">
+                    <label>Main file path</label><br />
+                    <input name="Input.Items[@i].MainFilePath"
+                           value="@Model.Input.Items[i].MainFilePath"
+                           style="width: 300px;"
+                           placeholder="main.c" />
+                </div>
+            </div>
+        }
+    </div>
+
+    <button type="button" onclick="addUrlRow()">Add URL field</button>
+
+    <div style="margin-top: 1rem;">
+        <button type="submit">Submit</button>
+        <a asp-page="/Assignments/Index">Back to Assignments</a>
+    </div>
+</form>
+
+<hr />
+
+@if (Model.PreviousSubmissions.Count > 0)
+{
+    <h2>Previous Submissions</h2>
+
+    <table border="1" cellpadding="8" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Submitted At</th>
+                <th>Status</th>
+                <th>Number of URLs</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var submission in Model.PreviousSubmissions)
+        {
+            <tr>
+                <td>@submission.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>@submission.Status</td>
+                <td>@submission.Items.Count</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@section Scripts {
+<script>
+    function addUrlRow() {
+        const list = document.getElementById("url-list");
+        const index = list.querySelectorAll(".url-row").length;
+
+        const div = document.createElement("div");
+        div.className = "url-row";
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "0.75rem";
+        div.style.marginBottom = "0.75rem";
+
+        div.innerHTML = `
+            <div>
+                <label>GitHub URL</label><br />
+                <input name="Input.Items[${index}].Url"
+                       style="width: 600px;"
+                       placeholder="https://github.com/owner/repo or https://github.com/owner/repo/tree/main/folder" />
+            </div>
+
+            <div style="margin-top: 0.5rem;">
+                <label>Path of main file</label><br />
+                <input name="Input.Items[${index}].MainFilePath"
+                       style="width: 300px;"
+                       placeholder="main.c" />
+            </div>
+        `;
+
+        list.appendChild(div);
+    }
+</script>
+}

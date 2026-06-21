@@ -1,0 +1,63 @@
+﻿@page
+@model LangGrader.Pages.Assignments.IndexModel
+@{
+    ViewData["Title"] = "Homeworks";
+}
+
+<h1>Assignments</h1>
+
+<p>
+    Logged in user:
+    @User.FindFirst("StudentName")?.Value
+    (@User.FindFirst("StudentNo")?.Value)
+</p>
+
+<p>
+    <a asp-page="/Logout">Logout</a>
+</p>
+
+@if (Model.Assignments.Count == 0)
+{
+    <p>There are currently no assignments available for submission.</p>
+}
+else
+{
+    <table border="1" cellpadding="8" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Assignment</th>
+                <th>Status</th>
+                <th>Deadline</th>
+                <th>Submit</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var assignment in Model.Assignments)
+        {
+            <tr>
+                <td>@assignment.Title</td>
+                <td>
+                    @if (assignment.IsFrozen)
+                    {
+                        <span>Closed (finalized)</span>
+                    }
+                    else if (DateTimeOffset.UtcNow > assignment.DeadlineAt)
+                    {
+                        <span>Deadline passed</span>
+                    }
+                    else
+                    {
+                        <span>Open for submission</span>
+                    }
+                </td>
+                <td>@assignment.DeadlineAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                <td>
+                    <a asp-page="/Assignments/Submit" asp-route-id="@assignment.Id">
+                        Submit / Edit
+                    </a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

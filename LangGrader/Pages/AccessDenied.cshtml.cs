@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace LangGrader.Pages;
 
-public class ErrorModel : PageModel
+public class AccessDeniedModel : PageModel
 {
     public void OnGet()
     {
