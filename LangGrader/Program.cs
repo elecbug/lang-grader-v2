@@ -22,6 +22,12 @@ builder.Services.AddScoped<IRepositoryValidator, GitRepositoryValidator>();
 builder.Services.AddScoped<IEffectiveSubmissionSelector, EffectiveSubmissionSelector>();
 builder.Services.AddScoped<IAssignmentFreezeService, AssignmentFreezeService>();
 
+builder.Services.Configure<AutoFreezeOptions>(
+    builder.Configuration.GetSection("AutoFreeze")
+);
+
+builder.Services.AddHostedService<AssignmentAutoFreezeHostedService>();
+
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

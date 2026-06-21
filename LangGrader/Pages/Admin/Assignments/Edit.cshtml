@@ -59,6 +59,25 @@
         </div>
 
         <div class="form-row">
+            <label>
+                <input asp-for="Input.AutoFreezeEnabled" disabled="@(Model.Assignment?.IsFrozen == true)" />
+                Auto freeze after deadline
+            </label>
+            <div class="text-muted">
+                If enabled, this assignment will be frozen automatically after the deadline.
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.AutoFreezeDelayMinutes">Auto freeze delay minutes</label>
+            <input asp-for="Input.AutoFreezeDelayMinutes"
+                   type="number"
+                   min="0"
+                   max="10080"
+                   disabled="@(Model.Assignment?.IsFrozen == true)" />
+        </div>
+
+        <div class="form-row">
             <label asp-for="Input.RequiredFilesJson">Required files JSON</label>
             <textarea asp-for="Input.RequiredFilesJson" disabled="@(Model.Assignment?.IsFrozen == true)"></textarea>
             <div class="text-muted">

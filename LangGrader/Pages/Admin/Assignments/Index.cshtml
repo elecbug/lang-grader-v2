@@ -54,6 +54,7 @@ else
                     <th>Deadline</th>
                     <th>Freeze Root</th>
                     <th>Actions</th>
+                    <th>Auto Freeze</th>
                 </tr>
             </thead>
             <tbody>
@@ -128,6 +129,19 @@ else
                                     }
                                 </form>
                             </div>
+                        </td>
+                        <td>
+                            @if (assignment.AutoFreezeEnabled)
+                            {
+                                <span class="badge badge-success">Enabled</span>
+                                <div class="text-muted">
+                                    <strong>Delay:</strong> @assignment.AutoFreezeDelayMinutes min
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="badge badge-muted">Disabled</span>
+                            }
                         </td>
                     </tr>
                 }

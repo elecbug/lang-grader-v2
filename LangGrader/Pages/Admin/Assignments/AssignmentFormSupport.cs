@@ -29,7 +29,9 @@ public static class AssignmentFormSupport
                 : assignment.RequiredFilesJson,
             MainFileCandidatesJson = string.IsNullOrWhiteSpace(assignment.MainFileCandidatesJson)
                 ? "[\"main.c\"]"
-                : assignment.MainFileCandidatesJson
+                : assignment.MainFileCandidatesJson,
+            AutoFreezeEnabled = assignment.AutoFreezeEnabled,
+            AutoFreezeDelayMinutes = assignment.AutoFreezeDelayMinutes,
         };
     }
 
@@ -55,7 +57,9 @@ public static class AssignmentFormSupport
             DeadlineAtKst = deadline.ToString(DateTimeLocalFormat),
             IsPublished = false,
             RequiredFilesJson = "[]",
-            MainFileCandidatesJson = "[\"main.c\"]"
+            MainFileCandidatesJson = "[\"main.c\"]",
+            AutoFreezeEnabled = true,
+            AutoFreezeDelayMinutes = 5,
         };
     }
 
@@ -117,6 +121,14 @@ public static class AssignmentFormSupport
             return false;
         }
 
+        if (input.AutoFreezeDelayMinutes < 0 || input.AutoFreezeDelayMinutes > 10080)
+        {
+            modelState.AddModelError(
+                nameof(input.AutoFreezeDelayMinutes),
+                "Auto freeze delay must be between 0 and 10080 minutes."
+            );
+        }
+
         assignment.Title = input.Title.Trim();
         assignment.Description = input.Description?.Trim() ?? "";
         assignment.OpenAt = openAtUtc;
@@ -124,6 +136,8 @@ public static class AssignmentFormSupport
         assignment.IsPublished = input.IsPublished;
         assignment.RequiredFilesJson = normalizedRequiredFilesJson;
         assignment.MainFileCandidatesJson = normalizedMainFileCandidatesJson;
+        assignment.AutoFreezeEnabled = input.AutoFreezeEnabled;
+        assignment.AutoFreezeDelayMinutes = input.AutoFreezeDelayMinutes;
 
         return true;
     }

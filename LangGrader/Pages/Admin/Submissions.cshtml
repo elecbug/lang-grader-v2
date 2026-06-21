@@ -124,7 +124,6 @@ else
                     <span class="badge badge-muted">Not Frozen</span>
                 }
             </div>
-
             <div>
                 <strong>Frozen At:</strong>
                 @if (Model.Summary.Assignment.FrozenAt.HasValue)
@@ -136,9 +135,22 @@ else
                     <span>-</span>
                 }
             </div>
-
             <div class="break-all">
                 <strong>Freeze Root:</strong> @(Model.Summary.Assignment.FreezeRootPath ?? "-")
+            </div>
+            <div>
+                <strong>Auto Freeze:</strong>
+                @if (Model.Summary.Assignment.AutoFreezeEnabled)
+                {
+                    <span class="badge badge-success">Enabled</span>
+                    <span class="text-muted">
+                        Delay @Model.Summary.Assignment.AutoFreezeDelayMinutes min
+                    </span>
+                }
+                else
+                {
+                    <span class="badge badge-muted">Disabled</span>
+                }
             </div>
         </div>
     </div>

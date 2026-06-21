@@ -21,4 +21,9 @@ public sealed class AssignmentFormInput
     public string RequiredFilesJson { get; set; } = "[]";
 
     public string MainFileCandidatesJson { get; set; } = "[\"main.c\"]";
+
+    [Range(0, 10080)]
+    public int AutoFreezeDelayMinutes { get; set; } = 5;
+
+    public bool AutoFreezeEnabled { get; set; } = true;
 }

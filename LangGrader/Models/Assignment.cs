@@ -20,4 +20,7 @@ public class Assignment
 
     public DateTime? FrozenAt { get; set; }
     public string? FreezeRootPath { get; set; }
+
+    public bool AutoFreezeEnabled { get; set; } = true;
+    public int AutoFreezeDelayMinutes { get; set; } = 5;
 }
