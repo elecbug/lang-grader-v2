@@ -1,5 +1,4 @@
 ﻿using System.Security.Cryptography;
-using System.Text;
 
 namespace LangGrader.Services;
 
@@ -8,22 +7,20 @@ public static class PasswordGenerator
     private const string Upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
     private const string Lower = "abcdefghijkmnopqrstuvwxyz";
     private const string Digits = "23456789";
-    private const string Symbols = "!@#$%";
-    private const string All = Upper + Lower + Digits + Symbols;
+    private const string All = Upper + Lower + Digits;
 
-    public static string Generate(int length = 12)
+    public static string Generate(int length = 8)
     {
-        if (length < 8)
+        if (length < 6)
         {
-            length = 8;
+            length = 6;
         }
 
         var chars = new List<char>
         {
             Pick(Upper),
             Pick(Lower),
-            Pick(Digits),
-            Pick(Symbols)
+            Pick(Digits)
         };
 
         while (chars.Count < length)

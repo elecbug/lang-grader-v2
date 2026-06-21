@@ -72,6 +72,36 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
+
+app.Use(async (context, next) =>
+{
+    var isAuthenticated = context.User.Identity?.IsAuthenticated == true;
+    var mustChangePassword = context.User.FindFirst("MustChangePassword")?.Value == "true";
+    var isAdmin = context.User.IsInRole("Admin");
+
+    if (isAuthenticated && mustChangePassword && !isAdmin)
+    {
+        var path = context.Request.Path;
+
+        var allowed =
+            path.StartsWithSegments("/ChangePassword") ||
+            path.StartsWithSegments("/Logout") ||
+            path.StartsWithSegments("/Login") ||
+            path.StartsWithSegments("/css") ||
+            path.StartsWithSegments("/js") ||
+            path.StartsWithSegments("/lib") ||
+            path.StartsWithSegments("/favicon.ico");
+
+        if (!allowed)
+        {
+            context.Response.Redirect("/ChangePassword?required=true");
+            return;
+        }
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
 
 app.MapStaticAssets();

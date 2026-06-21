@@ -71,6 +71,7 @@ public class LoginModel : PageModel
             new(ClaimTypes.Name, student.StudentNo),
             new("StudentNo", student.StudentNo),
             new("StudentName", student.Name),
+            new("MustChangePassword", student.MustChangePassword ? "true" : "false"),
             new(ClaimTypes.Role, student.Role)
         };
 
@@ -85,6 +86,11 @@ public class LoginModel : PageModel
             CookieAuthenticationDefaults.AuthenticationScheme,
             principal
         );
+
+        if (student.MustChangePassword && student.Role == "Student")
+        {
+            return RedirectToPage("/ChangePassword", new { required = true });
+        }
 
         if (!string.IsNullOrWhiteSpace(ReturnUrl) && Url.IsLocalUrl(ReturnUrl))
         {
