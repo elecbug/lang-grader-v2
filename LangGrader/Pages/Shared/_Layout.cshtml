@@ -1,42 +1,40 @@
 ﻿<!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <title>@ViewData["Title"] - LangGrader</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header style="border-bottom: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem;">
-        <strong>LangGrader</strong>
+    <header class="app-header">
+        <div>
+            <span class="app-title">LangGrader</span>
+        </div>
 
-        <nav style="margin-top: 0.5rem;">
-            <a asp-page="/Index">Home</a>
+        <nav class="app-nav">
+            <a class="button button-secondary button-small" asp-page="/Index">Home</a>
 
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <span> | </span>
-                <a asp-page="/Assignments/Index">Assignments</a>
+                <a class="button button-secondary button-small" asp-page="/Assignments/Index">Assignments</a>
 
                 @if (User.IsInRole("Admin"))
                 {
-                    <span> | </span>
-                    <a asp-page="/Admin/Submissions">Submissions</a>
-                    <span> | </span>
-                    <a asp-page="/Admin/Database">Database</a>
+                    <a class="button button-secondary button-small" asp-page="/Admin/Submissions">Submissions</a>
+                    <a class="button button-secondary button-small" asp-page="/Admin/Database">Database</a>
                 }
 
-                <span> | </span>
-                <a asp-page="/Logout">Logout</a>
+                <a class="button button-secondary button-small" asp-page="/Logout">Logout</a>
             }
             else
             {
-                <span> | </span>
-                <a asp-page="/Login">Login</a>
+                <a class="button button-primary button-small" asp-page="/Login">Login</a>
             }
         </nav>
     </header>
 
-    <main style="padding: 1rem;">
+    <main class="app-main">
         @RenderBody()
     </main>
 

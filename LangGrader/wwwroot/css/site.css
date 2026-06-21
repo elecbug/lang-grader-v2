@@ -1,31 +1,329 @@
-html {
-  font-size: 14px;
+:root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-muted: #f1f3f5;
+    --border: #d8dde3;
+    --text: #1f2933;
+    --text-muted: #6b7280;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --warning: #d97706;
+    --warning-hover: #b45309;
+    --success: #059669;
+    --success-bg: #d1fae5;
+    --error-bg: #fee2e2;
+    --warning-bg: #fef3c7;
+    --info-bg: #dbeafe;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+* {
+    box-sizing: border-box;
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+a {
+    color: var(--primary);
+    text-decoration: none;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+    a:hover {
+        text-decoration: underline;
+    }
+
+.app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    box-shadow: var(--shadow);
+}
+
+.app-title {
+    font-weight: 700;
+    font-size: 18px;
+    margin-right: 20px;
+}
+
+.app-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.app-main {
+    padding: 24px;
+    max-width: 1440px;
+    margin: 0 auto;
+}
+
+.page-title {
+    margin: 0 0 16px 0;
+    font-size: 28px;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+}
+
+.card-title {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.button,
+button,
+input[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: var(--surface-muted);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+    .button:hover,
+    button:hover,
+    input[type="submit"]:hover {
+        text-decoration: none;
+        filter: brightness(0.97);
+    }
+
+.button-primary {
+    background: var(--primary);
+    color: white;
+}
+
+    .button-primary:hover {
+        background: var(--primary-hover);
+    }
+
+.button-danger {
+    background: var(--danger);
+    color: white;
+}
+
+    .button-danger:hover {
+        background: var(--danger-hover);
+    }
+
+.button-warning {
+    background: var(--warning);
+    color: white;
+}
+
+    .button-warning:hover {
+        background: var(--warning-hover);
+    }
+
+.button-secondary {
+    background: var(--surface-muted);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+.button-small {
+    min-height: 28px;
+    padding: 4px 9px;
+    font-size: 13px;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.form-grid {
+    display: grid;
+    gap: 12px;
+    max-width: 760px;
+}
+
+.form-row label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="datetime-local"],
+textarea,
+select {
+    width: 100%;
+    max-width: 760px;
+    min-height: 34px;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    color: var(--text);
+    font: inherit;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.url-row {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+}
+
+th,
+td {
+    border-bottom: 1px solid var(--border);
+    padding: 9px 10px;
+    vertical-align: top;
+    text-align: left;
+}
+
+th {
+    background: var(--surface-muted);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+.code,
+code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+    background: var(--surface-muted);
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.break-all {
+    word-break: break-all;
+}
+
+.message {
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+}
+
+.message-success {
+    background: var(--success-bg);
+    border-color: #86efac;
+}
+
+.message-error {
+    background: var(--error-bg);
+    border-color: #fca5a5;
+}
+
+.message-warning {
+    background: var(--warning-bg);
+    border-color: #fcd34d;
+}
+
+.message-info {
+    background: var(--info-bg);
+    border-color: #93c5fd;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.badge-success {
+    background: var(--success-bg);
+    color: #065f46;
+}
+
+.badge-error {
+    background: var(--error-bg);
+    color: #991b1b;
+}
+
+.badge-warning {
+    background: var(--warning-bg);
+    color: #92400e;
+}
+
+.badge-info {
+    background: var(--info-bg);
+    color: #1e40af;
+}
+
+.badge-muted {
+    background: var(--surface-muted);
+    color: var(--text-muted);
+}
+
+.item-block {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #fff;
+}
+
+.item-block:last-child {
+    margin-bottom: 0;
 }
