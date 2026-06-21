@@ -12,26 +12,15 @@
     <a class="button button-secondary" asp-page="/Assignments/Index">Back to Assignments</a>
 </div>
 
-<div class="stat-grid">
-    <div class="stat-card">
-        <div class="stat-label">Students</div>
-        <div class="stat-value">@Model.Students.Count</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Assignments</div>
-        <div class="stat-value">@Model.Assignments.Count</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Submissions</div>
-        <div class="stat-value">@Model.Submissions.Count</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Items</div>
-        <div class="stat-value">@Model.SubmissionItems.Count</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Events</div>
-        <div class="stat-value">@Model.SubmissionEvents.Count</div>
+<div class="card">
+    <h2 class="card-title">Database Summary</h2>
+
+    <div class="info-block info-grid">
+        <div><strong>Students:</strong> @Model.Students.Count</div>
+        <div><strong>Assignments:</strong> @Model.Assignments.Count</div>
+        <div><strong>Submissions:</strong> @Model.Submissions.Count</div>
+        <div><strong>Items:</strong> @Model.SubmissionItems.Count</div>
+        <div><strong>Events:</strong> @Model.SubmissionEvents.Count</div>
     </div>
 </div>
 

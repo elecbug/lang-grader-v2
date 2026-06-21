@@ -16,6 +16,7 @@ public class SubmissionsModel : PageModel
     private readonly IEffectiveSubmissionSelector _effectiveSubmissionSelector;
     private readonly IAssignmentFreezeService _assignmentFreezeService; 
     private readonly IWebHostEnvironment _environment;
+    private readonly IRepositoryValidator _repositoryValidator;
 
     public Dictionary<long, SnapshotFileListModel> SnapshotFiles { get; set; } = new();
 
@@ -23,11 +24,13 @@ public class SubmissionsModel : PageModel
         AppDbContext db,
         IEffectiveSubmissionSelector effectiveSubmissionSelector,
         IAssignmentFreezeService assignmentFreezeService,
+        IRepositoryValidator repositoryValidator,
         IWebHostEnvironment environment)
     {
         _db = db;
         _effectiveSubmissionSelector = effectiveSubmissionSelector;
         _assignmentFreezeService = assignmentFreezeService;
+        _repositoryValidator = repositoryValidator;
         _environment = environment;
     }
 
@@ -170,6 +173,102 @@ public class SubmissionsModel : PageModel
             "application/zip",
             fileName
         );
+    }
+
+    public async Task<IActionResult> OnPostRevalidateSubmissionAsync(
+        long assignmentId,
+        long submissionId)
+    {
+        var submission = await _db.Submissions
+            .Include(s => s.Assignment)
+            .Include(s => s.Items)
+                .ThenInclude(i => i.Events)
+            .FirstOrDefaultAsync(s =>
+                s.Id == submissionId &&
+                s.AssignmentId == assignmentId);
+
+        if (submission is null)
+        {
+            return NotFound();
+        }
+
+        if (submission.Assignment.IsFrozen)
+        {
+            ErrorMessage = "Frozen assignments cannot be revalidated. Unfreeze the assignment first.";
+            return RedirectToPage("/Admin/Submissions", new { assignmentId });
+        }
+
+        if (submission.IsDeleted)
+        {
+            ErrorMessage = "Deleted submissions cannot be revalidated.";
+            return RedirectToPage("/Admin/Submissions", new { assignmentId });
+        }
+
+        if (submission.Items.Count == 0)
+        {
+            ErrorMessage = "This submission has no items to revalidate.";
+            return RedirectToPage("/Admin/Submissions", new { assignmentId });
+        }
+
+        foreach (var item in submission.Items)
+        {
+            await RevalidateItemCoreAsync(item);
+        }
+
+        submission.Status = CalculateSubmissionStatus(submission);
+
+        await _db.SaveChangesAsync();
+
+        Message = $"Submission {submission.Id} was revalidated. Status={submission.Status}.";
+
+        return RedirectToPage("/Admin/Submissions", new { assignmentId });
+    }
+
+    public async Task<IActionResult> OnPostRevalidateItemAsync(
+        long assignmentId,
+        long itemId)
+    {
+        var submission = await _db.Submissions
+            .Include(s => s.Assignment)
+            .Include(s => s.Items)
+                .ThenInclude(i => i.Events)
+            .FirstOrDefaultAsync(s =>
+                s.AssignmentId == assignmentId &&
+                s.Items.Any(i => i.Id == itemId));
+
+        if (submission is null)
+        {
+            return NotFound();
+        }
+
+        if (submission.Assignment.IsFrozen)
+        {
+            ErrorMessage = "Frozen assignments cannot be revalidated. Unfreeze the assignment first.";
+            return RedirectToPage("/Admin/Submissions", new { assignmentId });
+        }
+
+        if (submission.IsDeleted)
+        {
+            ErrorMessage = "Deleted submissions cannot be revalidated.";
+            return RedirectToPage("/Admin/Submissions", new { assignmentId });
+        }
+
+        var item = submission.Items.FirstOrDefault(i => i.Id == itemId);
+
+        if (item is null)
+        {
+            return NotFound();
+        }
+
+        await RevalidateItemCoreAsync(item);
+
+        submission.Status = CalculateSubmissionStatus(submission);
+
+        await _db.SaveChangesAsync();
+
+        Message = $"Submission item {item.Id} was revalidated. Status={item.Status}.";
+
+        return RedirectToPage("/Admin/Submissions", new { assignmentId });
     }
 
     public sealed class SnapshotFileListModel
@@ -336,4 +435,68 @@ public class SubmissionsModel : PageModel
             ? value
             : value[..80];
     }
+
+    private async Task RevalidateItemCoreAsync(SubmissionItem item)
+    {
+        var startedAt = DateTime.UtcNow;
+
+        item.Status = "Validating";
+
+        item.Events.Add(new SubmissionEvent
+        {
+            EventType = "RevalidationStarted",
+            Message = "Repository validation was started by an administrator.",
+            CreatedAt = startedAt
+        });
+
+        await _db.SaveChangesAsync();
+
+        var validationResult = await _repositoryValidator.ValidateAsync(item);
+
+        var completedAt = DateTime.UtcNow;
+
+        item.Status = validationResult.Status;
+        item.ObservedSha = validationResult.ObservedSha;
+        item.ValidatedAt = completedAt;
+
+        if (!string.IsNullOrWhiteSpace(validationResult.ResolvedBranch))
+        {
+            item.Branch = validationResult.ResolvedBranch;
+        }
+
+        item.Events.Add(new SubmissionEvent
+        {
+            EventType = validationResult.IsValid
+                ? "RevalidationSucceeded"
+                : "RevalidationFailed",
+            Message = validationResult.Message,
+            CreatedAt = completedAt
+        });
+    }
+
+    private static string CalculateSubmissionStatus(Submission submission)
+    {
+        if (submission.IsDeleted)
+        {
+            return "Deleted";
+        }
+
+        if (submission.Items.Count == 0)
+        {
+            return "PendingValidation";
+        }
+
+        if (submission.Items.All(i => i.Status == "Valid"))
+        {
+            return "Valid";
+        }
+
+        if (submission.Items.Any(i => i.Status is "PendingValidation" or "Validating"))
+        {
+            return "PendingValidation";
+        }
+
+        return "ValidationFailed";
+    }
+
 }

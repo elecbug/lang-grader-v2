@@ -408,3 +408,17 @@ summary {
 .compact-list li {
     margin-bottom: 3px;
 }
+
+.info-block {
+    display: grid;
+    gap: 5px;
+}
+
+.info-block > div {
+    line-height: 1.45;
+}
+
+.info-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px 18px;
+}
