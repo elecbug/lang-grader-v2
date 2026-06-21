@@ -1,13 +1,13 @@
 ﻿@page
 @model LangGrader.Pages.Assignments.IndexModel
 @{
-    ViewData["Title"] = "Homeworks";
+    ViewData["Title"] = "Assignments";
 }
 
 <h1>Assignments</h1>
 
 <p>
-    Logged in user:
+    Signed in as:
     @User.FindFirst("StudentName")?.Value
     (@User.FindFirst("StudentNo")?.Value)
 </p>
@@ -18,7 +18,7 @@
 
 @if (Model.Assignments.Count == 0)
 {
-    <p>There are currently no assignments available for submission.</p>
+    <p>No assignments are currently available.</p>
 }
 else
 {
@@ -28,36 +28,36 @@ else
                 <th>Assignment</th>
                 <th>Status</th>
                 <th>Deadline</th>
-                <th>Submit</th>
+                <th>Submission</th>
             </tr>
         </thead>
         <tbody>
-        @foreach (var assignment in Model.Assignments)
-        {
-            <tr>
-                <td>@assignment.Title</td>
-                <td>
-                    @if (assignment.IsFrozen)
-                    {
-                        <span>Closed (finalized)</span>
-                    }
-                    else if (DateTimeOffset.UtcNow > assignment.DeadlineAt)
-                    {
-                        <span>Deadline passed</span>
-                    }
-                    else
-                    {
-                        <span>Open for submission</span>
-                    }
-                </td>
-                <td>@assignment.DeadlineAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                <td>
-                    <a asp-page="/Assignments/Submit" asp-route-id="@assignment.Id">
-                        Submit / Edit
-                    </a>
-                </td>
-            </tr>
-        }
+            @foreach (var assignment in Model.Assignments)
+            {
+                <tr>
+                    <td>@assignment.Title</td>
+                    <td>
+                        @if (assignment.IsFrozen)
+                        {
+                            <span>Frozen</span>
+                        }
+                        else if (DateTime.UtcNow > assignment.DeadlineAt)
+                        {
+                            <span>Closed</span>
+                        }
+                        else
+                        {
+                            <span>Open</span>
+                        }
+                    </td>
+                    <td>@TimeViewHelper.FormatKstMinute(assignment.DeadlineAt)</td>
+                    <td>
+                        <a asp-page="/Assignments/Submit" asp-route-id="@assignment.Id">
+                            Submit / Update
+                        </a>
+                    </td>
+                </tr>
+            }
         </tbody>
     </table>
 }

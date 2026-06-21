@@ -1,4 +1,5 @@
 using LangGrader.Data;
+using LangGrader.Helpers;
 using LangGrader.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -38,7 +39,7 @@ public class SubmitModel : PageModel
         }
 
         AssignmentTitle = assignment.Title;
-        DeadlineText = assignment.DeadlineAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
 
         Input.Items.Add(new SubmitItemInput
         {
@@ -61,7 +62,7 @@ public class SubmitModel : PageModel
         }
 
         AssignmentTitle = assignment.Title;
-        DeadlineText = assignment.DeadlineAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
 
         var studentIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

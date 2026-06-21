@@ -1,14 +1,14 @@
 ﻿@page "{id:long}"
 @model LangGrader.Pages.Assignments.SubmitModel
 @{
-    ViewData["Title"] = "Assignment Submission";
+    ViewData["Title"] = "Submit Assignment";
 }
 
-<h1>Submit @Model.AssignmentTitle</h1>
+<h1>Submit: @Model.AssignmentTitle</h1>
 
 <p>
     Deadline:
-    @Model.DeadlineText     
+    @Model.DeadlineText
 </p>
 
 @if (!string.IsNullOrWhiteSpace(Model.Message))
@@ -49,7 +49,7 @@
         }
     </div>
 
-    <button type="button" onclick="addUrlRow()">Add URL field</button>
+    <button type="button" onclick="addUrlRow()">Add URL</button>
 
     <div style="margin-top: 1rem;">
         <button type="submit">Submit</button>
@@ -68,51 +68,51 @@
             <tr>
                 <th>Submitted At</th>
                 <th>Status</th>
-                <th>Number of URLs</th>
+                <th>URL Count</th>
             </tr>
         </thead>
         <tbody>
-        @foreach (var submission in Model.PreviousSubmissions)
-        {
-            <tr>
-                <td>@submission.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
-                <td>@submission.Status</td>
-                <td>@submission.Items.Count</td>
-            </tr>
-        }
+            @foreach (var submission in Model.PreviousSubmissions)
+            {
+                <tr>
+                    <td>@TimeViewHelper.FormatKst(submission.SubmittedAt)</td>
+                    <td>@submission.Status</td>
+                    <td>@submission.Items.Count</td>
+                </tr>
+            }
         </tbody>
     </table>
 }
 
 @section Scripts {
-<script>
-    function addUrlRow() {
-        const list = document.getElementById("url-list");
-        const index = list.querySelectorAll(".url-row").length;
+    <script>
+        function addUrlRow() {
+            const list = document.getElementById("url-list");
+            const index = list.querySelectorAll(".url-row").length;
 
-        const div = document.createElement("div");
-        div.className = "url-row";
-        div.style.border = "1px solid #ccc";
-        div.style.padding = "0.75rem";
-        div.style.marginBottom = "0.75rem";
+            const div = document.createElement("div");
+            div.className = "url-row";
+            div.style.border = "1px solid #ccc";
+            div.style.padding = "0.75rem";
+            div.style.marginBottom = "0.75rem";
 
-        div.innerHTML = `
-            <div>
-                <label>GitHub URL</label><br />
-                <input name="Input.Items[${index}].Url"
-                       style="width: 600px;"
-                       placeholder="https://github.com/owner/repo or https://github.com/owner/repo/tree/main/folder" />
-            </div>
+            div.innerHTML = `
+                <div>
+                    <label>GitHub URL</label><br />
+                    <input name="Input.Items[${index}].Url"
+                           style="width: 600px;"
+                           placeholder="https://github.com/owner/repo or https://github.com/owner/repo/tree/main/folder" />
+                </div>
 
-            <div style="margin-top: 0.5rem;">
-                <label>Path of main file</label><br />
-                <input name="Input.Items[${index}].MainFilePath"
-                       style="width: 300px;"
-                       placeholder="main.c" />
-            </div>
-        `;
+                <div style="margin-top: 0.5rem;">
+                    <label>Main file path</label><br />
+                    <input name="Input.Items[${index}].MainFilePath"
+                           style="width: 300px;"
+                           placeholder="main.c" />
+                </div>
+            `;
 
-        list.appendChild(div);
-    }
-</script>
+            list.appendChild(div);
+        }
+    </script>
 }
