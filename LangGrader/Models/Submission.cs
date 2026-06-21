@@ -20,4 +20,9 @@ public class Submission
     public DateTime? DeletedAt { get; set; }
 
     public List<SubmissionItem> Items { get; set; } = new();
+
+    public bool IsSelectedForFreeze { get; set; } = false;
+    public DateTime? FrozenAt { get; set; }
+    public string FreezeStatus { get; set; } = "NotFrozen";
+    public string? FreezeMessage { get; set; }
 }

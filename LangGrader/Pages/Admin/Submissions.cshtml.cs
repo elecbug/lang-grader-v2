@@ -13,14 +13,23 @@ public class SubmissionsModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly IEffectiveSubmissionSelector _effectiveSubmissionSelector;
+    private readonly IAssignmentFreezeService _assignmentFreezeService;
 
     public SubmissionsModel(
         AppDbContext db,
-        IEffectiveSubmissionSelector effectiveSubmissionSelector)
+        IEffectiveSubmissionSelector effectiveSubmissionSelector,
+        IAssignmentFreezeService assignmentFreezeService)
     {
         _db = db;
         _effectiveSubmissionSelector = effectiveSubmissionSelector;
+        _assignmentFreezeService = assignmentFreezeService;
     }
+
+    [TempData]
+    public string? Message { get; set; }
+
+    [TempData]
+    public string? ErrorMessage { get; set; }
 
     [BindProperty(SupportsGet = true)]
     public long? AssignmentId { get; set; }
@@ -51,5 +60,35 @@ public class SubmissionsModel : PageModel
         }
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostFreezeAsync(long assignmentId)
+    {
+        var assignment = await _db.Assignments
+            .FirstOrDefaultAsync(a => a.Id == assignmentId);
+
+        if (assignment is null)
+        {
+            return NotFound();
+        }
+
+        if (assignment.IsFrozen)
+        {
+            ErrorMessage = "This assignment is already frozen.";
+            return RedirectToPage("/Admin/Submissions", new { assignmentId });
+        }
+
+        var result = await _assignmentFreezeService.FreezeAssignmentAsync(assignmentId);
+
+        if (result.HasFailures)
+        {
+            ErrorMessage = string.Join(" ", result.Messages);
+        }
+        else
+        {
+            Message = string.Join(" ", result.Messages);
+        }
+
+        return RedirectToPage("/Admin/Submissions", new { assignmentId });
     }
 }

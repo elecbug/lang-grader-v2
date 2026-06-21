@@ -20,6 +20,7 @@ builder.Services.AddScoped<IGitHubUrlParser, GitHubUrlParser>();
 builder.Services.AddScoped<ICommandRunner, CommandRunner>();
 builder.Services.AddScoped<IRepositoryValidator, GitRepositoryValidator>();
 builder.Services.AddScoped<IEffectiveSubmissionSelector, EffectiveSubmissionSelector>();
+builder.Services.AddScoped<IAssignmentFreezeService, AssignmentFreezeService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

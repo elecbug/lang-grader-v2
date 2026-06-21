@@ -51,6 +51,35 @@ else
 {
     <h2>@Model.Summary.Assignment.Title</h2>
 
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div style="color: green; margin-bottom: 1rem;">
+            @Model.Message
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div style="color: red; margin-bottom: 1rem;">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    @if (!Model.Summary.Assignment.IsFrozen)
+    {
+        <form method="post"
+              asp-page-handler="Freeze"
+              asp-route-assignmentId="@Model.Summary.Assignment.Id"
+              onsubmit="return confirm('Freeze this assignment? This will lock the current effective submissions.');"
+              style="margin-bottom: 1rem;">
+            <button type="submit">Freeze Assignment</button>
+        </form>
+    }
+    else
+    {
+        <p><strong>This assignment is frozen.</strong></p>
+    }
+
     <table border="1" cellpadding="8" cellspacing="0" style="margin-bottom: 1rem;">
         <thead>
             <tr>
@@ -86,6 +115,7 @@ else
                 <th>Effective Status</th>
                 <th>Flags</th>
                 <th>Reason</th>
+                <th>Freeze</th>
                 <th>Items</th>
             </tr>
         </thead>
@@ -151,6 +181,27 @@ else
                     </td>
                     <td>@row.Reason</td>
                     <td>
+                        @if (row.EffectiveSubmission is null)
+                        {
+                            <span>-</span>
+                        }
+                        else
+                        {
+                            <div><strong>Selected:</strong> @row.EffectiveSubmission.IsSelectedForFreeze</div>
+                            <div><strong>Status:</strong> @row.EffectiveSubmission.FreezeStatus</div>
+
+                            @if (row.EffectiveSubmission.FrozenAt.HasValue)
+                            {
+                                <div><strong>Frozen at:</strong> @TimeViewHelper.FormatKst(row.EffectiveSubmission.FrozenAt.Value)</div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(row.EffectiveSubmission.FreezeMessage))
+                            {
+                                <div><strong>Message:</strong> @row.EffectiveSubmission.FreezeMessage</div>
+                            }
+                        }
+                    </td>
+                    <td>
                         @if (row.EffectiveSubmission is null || row.EffectiveSubmission.Items.Count == 0)
                         {
                             <span>-</span>
@@ -172,6 +223,13 @@ else
                                     <div><strong>Main file:</strong> @item.MainFilePath</div>
                                     <div><strong>Status:</strong> @item.Status</div>
                                     <div><strong>Observed SHA:</strong> @(item.ObservedSha ?? "-")</div>
+                                    <div><strong>Final SHA:</strong> @(item.FinalSha ?? "-")</div>
+                                    <div><strong>Snapshot:</strong> @(item.SnapshotPath ?? "-")</div>
+
+                                    @if (item.FrozenAt.HasValue)
+                                    {
+                                        <div><strong>Item frozen at:</strong> @TimeViewHelper.FormatKst(item.FrozenAt.Value)</div>
+                                    }
                                 </div>
                             }
                         }
