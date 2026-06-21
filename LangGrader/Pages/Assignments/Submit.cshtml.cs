@@ -1,6 +1,7 @@
 using LangGrader.Data;
 using LangGrader.Helpers;
 using LangGrader.Models;
+using LangGrader.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,12 @@ namespace LangGrader.Pages.Assignments;
 public class SubmitModel : PageModel
 {
     private readonly AppDbContext _db;
+    private readonly IGitHubUrlParser _urlParser;
 
-    public SubmitModel(AppDbContext db)
+    public SubmitModel(AppDbContext db, IGitHubUrlParser urlParser)
     {
         _db = db;
+        _urlParser = urlParser;
     }
 
     public string AssignmentTitle { get; set; } = "";
@@ -22,6 +25,9 @@ public class SubmitModel : PageModel
 
     public string? Message { get; set; }
     public string? ErrorMessage { get; set; }
+
+    public long AssignmentId { get; set; }
+    public bool IsAssignmentFrozen { get; set; }
 
     [BindProperty]
     public SubmitInput Input { get; set; } = new();
@@ -38,8 +44,10 @@ public class SubmitModel : PageModel
             return NotFound();
         }
 
+        AssignmentId = assignment.Id;
         AssignmentTitle = assignment.Title;
         DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
+        IsAssignmentFrozen = assignment.IsFrozen;
 
         Input.Items.Add(new SubmitItemInput
         {
@@ -61,8 +69,10 @@ public class SubmitModel : PageModel
             return NotFound();
         }
 
+        AssignmentId = assignment.Id;
         AssignmentTitle = assignment.Title;
         DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
+        IsAssignmentFrozen = assignment.IsFrozen;
 
         var studentIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -104,6 +114,24 @@ public class SubmitModel : PageModel
             return Page();
         }
 
+        var parsedItems = new List<(SubmitItemInput Input, GitHubUrlParseResult Parsed)>();
+
+        foreach (var item in validItems)
+        {
+            var parsed = _urlParser.Parse(item.Url);
+
+            if (!parsed.IsValid)
+            {
+                ErrorMessage = $"Invalid GitHub URL: {item.Url} ({parsed.ErrorMessage})";
+
+                Input.Items = validItems;
+                await LoadPreviousSubmissionsAsync(id);
+                return Page();
+            }
+
+            parsedItems.Add((item, parsed));
+        }
+
         var submission = new Submission
         {
             AssignmentId = assignment.Id,
@@ -113,14 +141,21 @@ public class SubmitModel : PageModel
             IsLate = now > assignment.DeadlineAt
         };
 
-        foreach (var item in validItems)
+        foreach (var pair in parsedItems)
         {
+            var item = pair.Input;
+            var parsed = pair.Parsed;
+
             submission.Items.Add(new SubmissionItem
             {
-                OriginalUrl = item.Url,
+                OriginalUrl = parsed.OriginalUrl,
+                Owner = parsed.Owner,
+                Repo = parsed.Repo,
+                Branch = parsed.Branch,
+                Path = parsed.Path,
+                UrlKind = parsed.UrlKind,
                 MainFilePath = item.MainFilePath,
-                Status = "PendingValidation",
-                UrlKind = "Unknown"
+                Status = "Parsed"
             });
         }
 
@@ -140,6 +175,67 @@ public class SubmitModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostDeleteAsync(long id, long submissionId)
+    {
+        var assignment = await _db.Assignments
+            .FirstOrDefaultAsync(a => a.Id == id && a.IsPublished);
+
+        if (assignment is null)
+        {
+            return NotFound();
+        }
+
+        var studentIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!long.TryParse(studentIdText, out var studentId))
+        {
+            return RedirectToPage("/Login");
+        }
+
+        var submission = await _db.Submissions
+            .Include(s => s.Items)
+            .FirstOrDefaultAsync(s =>
+                s.Id == submissionId &&
+                s.AssignmentId == assignment.Id &&
+                s.StudentId == studentId &&
+                !s.IsDeleted);
+
+        if (submission is null)
+        {
+            return NotFound();
+        }
+
+        if (assignment.IsFrozen)
+        {
+            ErrorMessage = "This assignment has already been frozen.";
+            AssignmentId = assignment.Id;
+            AssignmentTitle = assignment.Title;
+            DeadlineText = TimeViewHelper.FormatKstMinute(assignment.DeadlineAt);
+            IsAssignmentFrozen = assignment.IsFrozen;
+
+            Input.Items.Add(new SubmitItemInput
+            {
+                MainFilePath = "main.c"
+            });
+
+            await LoadPreviousSubmissionsAsync(id);
+            return Page();
+        }
+
+        submission.IsDeleted = true;
+        submission.DeletedAt = DateTime.UtcNow;
+        submission.Status = "Deleted";
+
+        foreach (var item in submission.Items)
+        {
+            item.Status = "Deleted";
+        }
+
+        await _db.SaveChangesAsync();
+
+        return RedirectToPage("/Assignments/Submit", new { id });
+    }
+
     private async Task LoadPreviousSubmissionsAsync(long assignmentId)
     {
         var studentIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -152,7 +248,10 @@ public class SubmitModel : PageModel
 
         PreviousSubmissions = await _db.Submissions
             .Include(s => s.Items)
-            .Where(s => s.AssignmentId == assignmentId && s.StudentId == studentId)
+            .Where(s =>
+                s.AssignmentId == assignmentId &&
+                s.StudentId == studentId &&
+                !s.IsDeleted)
             .OrderByDescending(s => s.SubmittedAt)
             .Take(10)
             .ToListAsync();

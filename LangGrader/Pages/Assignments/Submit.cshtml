@@ -68,7 +68,8 @@
             <tr>
                 <th>Submitted At</th>
                 <th>Status</th>
-                <th>URL Count</th>
+                <th>Items</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -77,7 +78,37 @@
                 <tr>
                     <td>@TimeViewHelper.FormatKst(submission.SubmittedAt)</td>
                     <td>@submission.Status</td>
-                    <td>@submission.Items.Count</td>
+                    <td>
+                        @foreach (var item in submission.Items)
+                        {
+                            <div style="margin-bottom: 0.75rem;">
+                                <div><strong>URL:</strong> @item.OriginalUrl</div>
+                                <div><strong>Kind:</strong> @item.UrlKind</div>
+                                <div><strong>Owner:</strong> @item.Owner</div>
+                                <div><strong>Repo:</strong> @item.Repo</div>
+                                <div><strong>Branch:</strong> @item.Branch</div>
+                                <div><strong>Path:</strong> @(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</div>
+                                <div><strong>Main file:</strong> @item.MainFilePath</div>
+                                <div><strong>Status:</strong> @item.Status</div>
+                            </div>
+                        }
+                    </td>
+                    <td>
+                        @if (!Model.IsAssignmentFrozen)
+                        {
+                            <form method="post"
+                                  asp-page-handler="Delete"
+                                  asp-route-id="@Model.AssignmentId"
+                                  asp-route-submissionId="@submission.Id"
+                                  onsubmit="return confirm('Delete this submission?');">
+                                <button type="submit">Delete</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span>Locked</span>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>

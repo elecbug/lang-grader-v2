@@ -1,5 +1,6 @@
 using LangGrader.Data;
 using LangGrader.Models;
+using LangGrader.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 builder.Services.AddScoped<IPasswordHasher<Student>, PasswordHasher<Student>>();
+builder.Services.AddScoped<IGitHubUrlParser, GitHubUrlParser>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

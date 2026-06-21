@@ -12,10 +12,12 @@ public class Submission
 
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
 
-    // Will be extended to include PendingValidation, Valid, Invalid, Frozen, etc.
     public string Status { get; set; } = "PendingValidation";
 
     public bool IsLate { get; set; } = false;
+
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
 
     public List<SubmissionItem> Items { get; set; } = new();
 }
