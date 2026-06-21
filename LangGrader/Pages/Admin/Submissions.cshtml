@@ -1,0 +1,183 @@
+﻿@page
+@model LangGrader.Pages.Admin.SubmissionsModel
+@{
+    ViewData["Title"] = "Submission Summary";
+}
+
+<h1>Submission Summary</h1>
+
+<p>
+    This page shows the effective submission candidate for each student.
+    Deleted submissions are excluded from effective selection but counted for audit purposes.
+</p>
+
+<p>
+    <a asp-page="/Admin/Database">Database Viewer</a>
+    |
+    <a asp-page="/Assignments/Index">Back to Assignments</a>
+</p>
+
+@if (Model.Assignments.Count == 0)
+{
+    <p>No assignments found.</p>
+}
+else
+{
+    <form method="get" style="margin-bottom: 1rem;">
+        <label for="assignmentId">Assignment</label>
+        <select id="assignmentId" name="assignmentId">
+            @foreach (var assignment in Model.Assignments)
+            {
+                if (assignment.Id == Model.AssignmentId)
+                {
+                    <option value="@assignment.Id" selected>
+                        @assignment.Title
+                    </option>
+                }
+                else
+                {
+                    <option value="@assignment.Id">
+                        @assignment.Title
+                    </option>
+                }
+            }
+        </select>
+
+        <button type="submit">Load</button>
+    </form>
+}
+
+@if (Model.Summary is not null)
+{
+    <h2>@Model.Summary.Assignment.Title</h2>
+
+    <table border="1" cellpadding="8" cellspacing="0" style="margin-bottom: 1rem;">
+        <thead>
+            <tr>
+                <th>Total Students</th>
+                <th>Submitted Students</th>
+                <th>Ready for Freeze</th>
+                <th>Missing Students</th>
+                <th>Deadline</th>
+                <th>Frozen</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@Model.Summary.TotalStudents</td>
+                <td>@Model.Summary.SubmittedStudents</td>
+                <td>@Model.Summary.ReadyStudents</td>
+                <td>@Model.Summary.MissingStudents</td>
+                <td>@TimeViewHelper.FormatKst(Model.Summary.Assignment.DeadlineAt)</td>
+                <td>@Model.Summary.Assignment.IsFrozen</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table border="1" cellpadding="8" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Student No</th>
+                <th>Name</th>
+                <th>Total Submissions</th>
+                <th>Deleted</th>
+                <th>Latest Submission</th>
+                <th>Effective Submission</th>
+                <th>Effective Status</th>
+                <th>Flags</th>
+                <th>Reason</th>
+                <th>Items</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Summary.Rows)
+            {
+                <tr>
+                    <td>@row.StudentNo</td>
+                    <td>@row.StudentName</td>
+                    <td>@row.TotalSubmissionCount</td>
+                    <td>@row.DeletedSubmissionCount</td>
+                    <td>
+                        @if (row.LatestSubmission is null)
+                        {
+                            <span>-</span>
+                        }
+                        else
+                        {
+                            <div><strong>Id:</strong> @row.LatestSubmission.Id</div>
+                            <div><strong>Time:</strong> @TimeViewHelper.FormatKst(row.LatestSubmission.SubmittedAt)</div>
+                            <div><strong>Status:</strong> @row.LatestSubmission.Status</div>
+                            <div><strong>Deleted:</strong> @row.LatestSubmission.IsDeleted</div>
+                        }
+                    </td>
+                    <td>
+                        @if (row.EffectiveSubmission is null)
+                        {
+                            <span>-</span>
+                        }
+                        else
+                        {
+                            <div><strong>Id:</strong> @row.EffectiveSubmission.Id</div>
+                            <div><strong>Time:</strong> @TimeViewHelper.FormatKst(row.EffectiveSubmission.SubmittedAt)</div>
+                            <div><strong>Status:</strong> @row.EffectiveSubmission.Status</div>
+                            <div><strong>Late:</strong> @row.EffectiveSubmission.IsLate</div>
+                        }
+                    </td>
+                    <td>
+                        @if (row.IsReadyForFreeze)
+                        {
+                            <strong>@row.EffectiveStatus</strong>
+                        }
+                        else
+                        {
+                            <span>@row.EffectiveStatus</span>
+                        }
+                    </td>
+                    <td>
+                        @if (row.HasLateSubmission)
+                        {
+                            <div>Late submission exists</div>
+                        }
+
+                        @if (row.HasValidationFailure)
+                        {
+                            <div>Validation failure exists</div>
+                        }
+
+                        @if (!row.HasLateSubmission && !row.HasValidationFailure)
+                        {
+                            <span>-</span>
+                        }
+                    </td>
+                    <td>@row.Reason</td>
+                    <td>
+                        @if (row.EffectiveSubmission is null || row.EffectiveSubmission.Items.Count == 0)
+                        {
+                            <span>-</span>
+                        }
+                        else
+                        {
+                            @foreach (var item in row.EffectiveSubmission.Items)
+                            {
+                                <div style="margin-bottom: 0.75rem;">
+                                    <div><strong>Item Id:</strong> @item.Id</div>
+                                    <div><strong>URL:</strong> <span style="word-break: break-all;">@item.OriginalUrl</span></div>
+                                    <div><strong>Kind:</strong> @item.UrlKind</div>
+                                    <div><strong>Repo:</strong> @item.Owner / @item.Repo</div>
+                                    <div>
+                                        <strong>Branch:</strong>
+                                        @(string.IsNullOrWhiteSpace(item.Branch) ? "(default)" : item.Branch)
+                                    </div>
+                                    <div><strong>Path:</strong> @(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</div>
+                                    <div><strong>Main file:</strong> @item.MainFilePath</div>
+                                    <div><strong>Status:</strong> @item.Status</div>
+                                    <div><strong>Observed SHA:</strong> @(item.ObservedSha ?? "-")</div>
+                                </div>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

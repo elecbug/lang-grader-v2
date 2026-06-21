@@ -20,6 +20,8 @@
                 @if (User.IsInRole("Admin"))
                 {
                     <span> | </span>
+                    <a asp-page="/Admin/Submissions">Submissions</a>
+                    <span> | </span>
                     <a asp-page="/Admin/Database">Database</a>
                 }
 
