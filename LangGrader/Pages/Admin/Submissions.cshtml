@@ -313,6 +313,65 @@ else
                                             <div class="kv-key">Snapshot</div>
                                             <div class="kv-value break-all">@(item.SnapshotPath ?? "-")</div>
 
+                                            @if (!string.IsNullOrWhiteSpace(item.SnapshotPath))
+                                            {
+                                                <div style="margin-top: 0.5rem;">
+                                                    @if (Model.SnapshotFiles.TryGetValue(item.Id, out var snapshotInfo) && snapshotInfo.Exists)
+                                                    {
+                                                        <a class="button button-primary button-small"
+                                                           asp-page-handler="DownloadSnapshot"
+                                                           asp-route-itemId="@item.Id">
+                                                            Download Snapshot
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-warning">Snapshot missing</span>
+
+                                                        @if (snapshotInfo is not null && !string.IsNullOrWhiteSpace(snapshotInfo.ErrorMessage))
+                                                        {
+                                                            <div class="text-muted">
+                                                                @snapshotInfo.ErrorMessage
+                                                            </div>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div>
+                                                    <span class="badge badge-muted">No snapshot</span>
+                                                </div>
+                                            }
+
+                                            @if (Model.SnapshotFiles.TryGetValue(item.Id, out var fileList) && fileList.Exists)
+                                            {
+                                                <details style="margin-top: 0.5rem;">
+                                                    <summary>Snapshot files (@fileList.Entries.Count@(fileList.IsTruncated ? "+" : ""))</summary>
+
+                                                    @if (fileList.Entries.Count == 0)
+                                                    {
+                                                        <div class="text-muted">No files found in snapshot.</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <ul class="compact-list">
+                                                            @foreach (var entry in fileList.Entries)
+                                                            {
+                                                                <li><code>@entry</code></li>
+                                                            }
+                                                        </ul>
+
+                                                        @if (fileList.IsTruncated)
+                                                        {
+                                                            <div class="text-muted">
+                                                                File list was truncated.
+                                                            </div>
+                                                        }
+                                                    }
+                                                </details>
+                                            }
+
                                             @if (item.FrozenAt.HasValue)
                                             {
                                                 <div class="kv-key">Item frozen at</div>

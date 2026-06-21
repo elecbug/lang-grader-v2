@@ -387,3 +387,24 @@ pre.code {
     overflow-x: auto;
     white-space: pre;
 }
+
+details {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: var(--surface-muted);
+}
+
+summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.compact-list {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+}
+
+.compact-list li {
+    margin-bottom: 3px;
+}
