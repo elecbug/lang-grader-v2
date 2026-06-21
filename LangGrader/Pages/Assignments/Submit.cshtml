@@ -86,7 +86,10 @@
                                 <div><strong>Kind:</strong> @item.UrlKind</div>
                                 <div><strong>Owner:</strong> @item.Owner</div>
                                 <div><strong>Repo:</strong> @item.Repo</div>
-                                <div><strong>Branch:</strong> @item.Branch</div>
+                                <div>
+                                    <strong>Branch:</strong>
+                                    @(string.IsNullOrWhiteSpace(item.Branch) ? "(default)" : item.Branch)
+                                </div>
                                 <div><strong>Path:</strong> @(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)</div>
                                 <div><strong>Main file:</strong> @item.MainFilePath</div>
                                 <div><strong>Status:</strong> @item.Status</div>

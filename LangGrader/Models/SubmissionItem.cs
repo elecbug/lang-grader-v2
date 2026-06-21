@@ -12,7 +12,7 @@ public class SubmissionItem
     // Fields to be filled later by a GitHub URL parser
     public string Owner { get; set; } = "";
     public string Repo { get; set; } = "";
-    public string Branch { get; set; } = "main";
+    public string Branch { get; set; } = "";
     public string Path { get; set; } = "";
 
     // Will be extended to Repository, Folder, File, etc.

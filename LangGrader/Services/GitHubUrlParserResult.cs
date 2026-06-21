@@ -10,7 +10,10 @@ public sealed class GitHubUrlParseResult
 
     public string Owner { get; init; } = "";
     public string Repo { get; init; } = "";
-    public string Branch { get; init; } = "main";
+
+    // Empty branch means "use the repository default branch".
+    public string Branch { get; init; } = "";
+
     public string Path { get; init; } = "";
 
     public string UrlKind { get; init; } = "Unknown";

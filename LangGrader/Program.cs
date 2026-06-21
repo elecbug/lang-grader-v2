@@ -17,6 +17,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IPasswordHasher<Student>, PasswordHasher<Student>>();
 builder.Services.AddScoped<IGitHubUrlParser, GitHubUrlParser>();
+builder.Services.AddScoped<ICommandRunner, CommandRunner>();
+builder.Services.AddScoped<IRepositoryValidator, GitRepositoryValidator>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

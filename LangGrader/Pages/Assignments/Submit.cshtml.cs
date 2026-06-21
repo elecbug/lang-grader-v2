@@ -13,11 +13,16 @@ public class SubmitModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly IGitHubUrlParser _urlParser;
+    private readonly IRepositoryValidator _repositoryValidator;
 
-    public SubmitModel(AppDbContext db, IGitHubUrlParser urlParser)
+    public SubmitModel(
+        AppDbContext db,
+        IGitHubUrlParser urlParser,
+        IRepositoryValidator repositoryValidator)
     {
         _db = db;
         _urlParser = urlParser;
+        _repositoryValidator = repositoryValidator;
     }
 
     public string AssignmentTitle { get; set; } = "";
@@ -162,7 +167,51 @@ public class SubmitModel : PageModel
         _db.Submissions.Add(submission);
         await _db.SaveChangesAsync();
 
-        Message = "The submission URL has been saved. URL validation will be performed in the next step.";
+        foreach (var item in submission.Items)
+        {
+            var branchText = string.IsNullOrWhiteSpace(item.Branch)
+                ? "(default)"
+                : item.Branch;
+
+            item.Events.Add(new SubmissionEvent
+            {
+                EventType = "UrlParsed",
+                Message = $"URL parsed as {item.UrlKind}: {item.Owner}/{item.Repo}, branch={branchText}, path={(string.IsNullOrWhiteSpace(item.Path) ? "/" : item.Path)}",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            item.Status = "Validating";
+
+            await _db.SaveChangesAsync();
+
+            var validationResult = await _repositoryValidator.ValidateAsync(item);
+
+            item.Status = validationResult.Status;
+            item.ObservedSha = validationResult.ObservedSha;
+            item.ValidatedAt = DateTime.UtcNow;
+
+            if (!string.IsNullOrWhiteSpace(validationResult.ResolvedBranch))
+            {
+                item.Branch = validationResult.ResolvedBranch;
+            }
+
+            item.Events.Add(new SubmissionEvent
+            {
+                EventType = validationResult.IsValid ? "ValidationSucceeded" : "ValidationFailed",
+                Message = validationResult.Message,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+        }
+
+        submission.Status = submission.Items.All(i => i.Status == "Valid")
+            ? "Valid"
+            : "ValidationFailed";
+
+        await _db.SaveChangesAsync();
+
+        Message = "Submission URLs have been saved and validated.";
 
         Input = new SubmitInput();
         Input.Items.Add(new SubmitItemInput

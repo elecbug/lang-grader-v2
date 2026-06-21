@@ -68,7 +68,7 @@ public sealed class GitHubUrlParser : IGitHubUrlParser
                 originalUrl,
                 owner,
                 repo,
-                branch: "main",
+                branch: "",
                 path: "",
                 urlKind: "Repository"
             );
@@ -181,7 +181,7 @@ public sealed class GitHubUrlParser : IGitHubUrlParser
             OriginalUrl = originalUrl,
             Owner = owner,
             Repo = repo,
-            Branch = string.IsNullOrWhiteSpace(branch) ? "main" : branch,
+            Branch = branch,
             Path = path,
             UrlKind = urlKind,
             NormalizedUrl = normalizedUrl
