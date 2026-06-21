@@ -94,6 +94,8 @@
             <th>Deadline</th>
             <th>Published</th>
             <th>Frozen</th>
+            <th>Frozen At</th>
+            <th>Freeze Root Path</th>
             <th>Required Files</th>
             <th>Main File Candidates</th>
         </tr>
@@ -108,6 +110,19 @@
                 <td>@TimeViewHelper.FormatKst(assignment.DeadlineAt)</td>
                 <td>@assignment.IsPublished</td>
                 <td>@assignment.IsFrozen</td>
+                <td>
+                    @if (assignment.FrozenAt.HasValue)
+                    {
+                        @TimeViewHelper.FormatKst(assignment.FrozenAt.Value)
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </td>
+                <td style="max-width: 420px; word-break: break-all;">
+                    @(assignment.FreezeRootPath ?? "-")
+                </td>
                 <td><code>@assignment.RequiredFilesJson</code></td>
                 <td><code>@assignment.MainFileCandidatesJson</code></td>
             </tr>

@@ -30,6 +30,12 @@ namespace LangGrader.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FreezeRootPath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FrozenAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsFrozen")
                         .HasColumnType("INTEGER");
 

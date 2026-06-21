@@ -78,6 +78,14 @@ else
     else
     {
         <p><strong>This assignment is frozen.</strong></p>
+
+        <form method="post"
+              asp-page-handler="Unfreeze"
+              asp-route-assignmentId="@Model.Summary.Assignment.Id"
+              onsubmit="return confirm('Unfreeze this assignment? This will clear freeze metadata and delete frozen snapshots.');"
+              style="margin-bottom: 1rem;">
+            <button type="submit">Unfreeze Assignment</button>
+        </form>
     }
 
     <table border="1" cellpadding="8" cellspacing="0" style="margin-bottom: 1rem;">
@@ -89,6 +97,8 @@ else
                 <th>Missing Students</th>
                 <th>Deadline</th>
                 <th>Frozen</th>
+                <th>Frozen At</th>
+                <th>Freeze Root</th>
             </tr>
         </thead>
         <tbody>
@@ -99,6 +109,19 @@ else
                 <td>@Model.Summary.MissingStudents</td>
                 <td>@TimeViewHelper.FormatKst(Model.Summary.Assignment.DeadlineAt)</td>
                 <td>@Model.Summary.Assignment.IsFrozen</td>
+                <td>
+                    @if (Model.Summary.Assignment.FrozenAt.HasValue)
+                    {
+                        @TimeViewHelper.FormatKst(Model.Summary.Assignment.FrozenAt.Value)
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </td>
+                <td style="max-width: 420px; word-break: break-all;">
+                    @(Model.Summary.Assignment.FreezeRootPath ?? "-")
+                </td>
             </tr>
         </tbody>
     </table>

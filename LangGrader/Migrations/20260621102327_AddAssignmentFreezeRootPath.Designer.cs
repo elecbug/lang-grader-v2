@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LangGrader.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260621044345_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260621102327_AddAssignmentFreezeRootPath")]
+    partial class AddAssignmentFreezeRootPath
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,6 +31,12 @@ namespace LangGrader.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FreezeRootPath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FrozenAt")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsFrozen")
@@ -107,7 +113,26 @@ namespace LangGrader.Migrations
                     b.Property<long>("AssignmentId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FreezeMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FreezeStatus")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FrozenAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsLate")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsSelectedForFreeze")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Status")

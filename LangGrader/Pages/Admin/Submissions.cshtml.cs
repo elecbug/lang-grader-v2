@@ -91,4 +91,34 @@ public class SubmissionsModel : PageModel
 
         return RedirectToPage("/Admin/Submissions", new { assignmentId });
     }
+
+    public async Task<IActionResult> OnPostUnfreezeAsync(long assignmentId)
+    {
+        var assignment = await _db.Assignments
+            .FirstOrDefaultAsync(a => a.Id == assignmentId);
+
+        if (assignment is null)
+        {
+            return NotFound();
+        }
+
+        if (!assignment.IsFrozen)
+        {
+            ErrorMessage = "This assignment is not frozen.";
+            return RedirectToPage("/Admin/Submissions", new { assignmentId });
+        }
+
+        var result = await _assignmentFreezeService.UnfreezeAssignmentAsync(assignmentId);
+
+        if (result.HasFailures)
+        {
+            ErrorMessage = string.Join(" ", result.Messages);
+        }
+        else
+        {
+            Message = string.Join(" ", result.Messages);
+        }
+
+        return RedirectToPage("/Admin/Submissions", new { assignmentId });
+    }
 }

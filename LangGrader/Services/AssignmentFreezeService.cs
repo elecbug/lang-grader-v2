@@ -1,7 +1,8 @@
-﻿using System.IO.Compression;
-using LangGrader.Data;
+﻿using LangGrader.Data;
+using LangGrader.Helpers;
 using LangGrader.Models;
 using Microsoft.EntityFrameworkCore;
+using System.IO.Compression;
 
 namespace LangGrader.Services;
 
@@ -64,9 +65,23 @@ public sealed class AssignmentFreezeService : IAssignmentFreezeService
 
         result.SelectedSubmissionCount = candidateIds.Count;
 
+        var frozenAtUtc = DateTime.UtcNow;
+        var freezeRoot = CreateFrozenAssignmentRoot(assignment, frozenAtUtc);
+
+        assignment.FrozenAt = frozenAtUtc;
+        assignment.FreezeRootPath = freezeRoot;
+
+        SafeDeleteDirectory(freezeRoot);
+        Directory.CreateDirectory(freezeRoot);
+
+        await _db.SaveChangesAsync();
+
         if (candidateIds.Count == 0)
         {
             assignment.IsFrozen = true;
+            assignment.FrozenAt = frozenAtUtc;
+            assignment.FreezeRootPath = freezeRoot;
+
             await _db.SaveChangesAsync();
 
             result.Messages.Add("No ready submissions were found. Assignment was marked as frozen.");
@@ -82,6 +97,7 @@ public sealed class AssignmentFreezeService : IAssignmentFreezeService
             submission.IsSelectedForFreeze = false;
             submission.FreezeStatus = "NotSelected";
             submission.FreezeMessage = null;
+            submission.FrozenAt = null;
         }
 
         await _db.SaveChangesAsync();
@@ -111,9 +127,17 @@ public sealed class AssignmentFreezeService : IAssignmentFreezeService
 
             await _db.SaveChangesAsync();
 
-            foreach (var item in submission.Items)
+            for (var i = 0; i < submission.Items.Count; i++)
             {
-                var itemResult = await FreezeSubmissionItemAsync(assignment, submission, item);
+                var item = submission.Items[i];
+                var itemNumber = i + 1;
+
+                var itemResult = await FreezeSubmissionItemAsync(
+                    assignment,
+                    submission,
+                    item,
+                    itemNumber
+                );
 
                 if (!itemResult.Success)
                 {
@@ -140,6 +164,9 @@ public sealed class AssignmentFreezeService : IAssignmentFreezeService
         }
 
         assignment.IsFrozen = true;
+        assignment.FrozenAt = frozenAtUtc;
+        assignment.FreezeRootPath = freezeRoot;
+
         await _db.SaveChangesAsync();
 
         result.Messages.Add(
@@ -149,32 +176,114 @@ public sealed class AssignmentFreezeService : IAssignmentFreezeService
         return result;
     }
 
+    public async Task<AssignmentFreezeResult> UnfreezeAssignmentAsync(long assignmentId)
+    {
+        var result = new AssignmentFreezeResult
+        {
+            AssignmentId = assignmentId
+        };
+
+        var assignment = await _db.Assignments
+            .FirstOrDefaultAsync(a => a.Id == assignmentId);
+
+        if (assignment is null)
+        {
+            result.FailedSubmissionCount++;
+            result.Messages.Add("Assignment not found.");
+            return result;
+        }
+
+        var submissions = await _db.Submissions
+            .Include(s => s.Items)
+                .ThenInclude(i => i.Events)
+            .Where(s => s.AssignmentId == assignmentId)
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+
+        foreach (var submission in submissions)
+        {
+            var hadFreezeInfo =
+                submission.IsSelectedForFreeze ||
+                submission.FrozenAt.HasValue ||
+                submission.FreezeStatus != "NotFrozen" ||
+                submission.Items.Any(i =>
+                    i.FrozenAt.HasValue ||
+                    !string.IsNullOrWhiteSpace(i.FinalSha) ||
+                    !string.IsNullOrWhiteSpace(i.SnapshotPath));
+
+            submission.IsSelectedForFreeze = false;
+            submission.FrozenAt = null;
+            submission.FreezeStatus = "NotFrozen";
+            submission.FreezeMessage = null;
+
+            foreach (var item in submission.Items)
+            {
+                if (hadFreezeInfo)
+                {
+                    item.Events.Add(new SubmissionEvent
+                    {
+                        EventType = "FreezeCleared",
+                        Message = "Freeze metadata was cleared by an administrator.",
+                        CreatedAt = now
+                    });
+                }
+
+                item.FinalSha = null;
+                item.SnapshotPath = null;
+                item.FrozenAt = null;
+            }
+        }
+
+        assignment.IsFrozen = false;
+        assignment.FrozenAt = null;
+        assignment.FreezeRootPath = null;
+
+        DeleteFrozenAssignmentRoot(assignment);
+        DeleteLegacyFrozenDirectory(assignment);
+
+        await _db.SaveChangesAsync();
+
+        result.Messages.Add("Assignment was unfrozen. Freeze metadata and frozen snapshots were cleared.");
+        return result;
+    }
+
     private async Task<(bool Success, string Message)> FreezeSubmissionItemAsync(
         Assignment assignment,
         Submission submission,
-        SubmissionItem item)
+        SubmissionItem item,
+        int itemNumber)
     {
         var frozenAt = DateTime.UtcNow;
 
-        var root = Path.Combine(
-            _environment.ContentRootPath,
-            "storage",
-            "assignments",
-            $"assignment_{assignment.Id}",
-            "frozen",
-            SanitizePathSegment(submission.Student.StudentNo),
-            $"submission_{submission.Id}",
-            $"item_{item.Id}"
+        var root = BuildFreezeItemRoot(
+            assignment,
+            submission,
+            item,
+            itemNumber
         );
 
         if (Directory.Exists(root))
         {
-            Directory.Delete(root, recursive: true);
+            SafeDeleteDirectory(root);
         }
 
         Directory.CreateDirectory(root);
 
-        var repoDir = Path.Combine(root, "repo");
+        var tempRoot = Path.Combine(
+            _environment.ContentRootPath,
+            "storage",
+            "temp",
+            "freeze",
+            $"assignment_{assignment.Id}",
+            $"submission_{submission.Id}",
+            $"item_{item.Id}_{DateTime.UtcNow:yyyyMMddHHmmssfff}"
+        );
+
+        SafeDeleteDirectory(tempRoot);
+        Directory.CreateDirectory(tempRoot);
+
+        var repoDir = Path.Combine(tempRoot, "repo");
         var submittedDir = Path.Combine(root, "submitted");
         var snapshotZipPath = Path.Combine(root, "snapshot.zip");
 
@@ -314,6 +423,10 @@ public sealed class AssignmentFreezeService : IAssignmentFreezeService
                 frozenAt
             );
         }
+        finally
+        {
+            SafeDeleteDirectory(tempRoot);
+        }
     }
 
     private async Task<(bool Success, string Message)> MarkItemFreezeFailedAsync(
@@ -334,6 +447,53 @@ public sealed class AssignmentFreezeService : IAssignmentFreezeService
         await _db.SaveChangesAsync();
 
         return (false, $"Item {item.Id} failed: {message}");
+    }
+
+    private string BuildFreezeItemRoot(
+        Assignment assignment,
+        Submission submission,
+        SubmissionItem item,
+        int itemNumber)
+    {
+        var assignmentRoot = GetFrozenAssignmentRoot(assignment);
+        var studentSegment = SanitizePathSegment(submission.Student.StudentNo);
+
+        var repoSegment = SanitizePathSegment($"{item.Owner}_{item.Repo}");
+        var itemSegment = $"{itemNumber:00}_{repoSegment}";
+
+        return Path.Combine(
+            assignmentRoot,
+            studentSegment,
+            itemSegment
+        );
+    }
+
+    private string GetCurrentFrozenAssignmentRoot(Assignment assignment)
+    {
+        return Path.Combine(
+            _environment.ContentRootPath,
+            "storage",
+            "frozen",
+            $"assignment_{assignment.Id}"
+        );
+    }
+
+    private string GetLegacyFrozenAssignmentRoot(Assignment assignment)
+    {
+        return Path.Combine(
+            _environment.ContentRootPath,
+            "storage",
+            "assignments",
+            $"assignment_{assignment.Id}",
+            "frozen"
+        );
+    }
+
+    private void DeleteLegacyFrozenDirectory(Assignment assignment)
+    {
+        var root = GetLegacyFrozenAssignmentRoot(assignment);
+
+        SafeDeleteDirectory(root);
     }
 
     private static void CopyDirectory(string sourceDir, string destinationDir)
@@ -382,5 +542,121 @@ public sealed class AssignmentFreezeService : IAssignmentFreezeService
         return text.Length <= 1000
             ? text
             : text[..1000] + "...";
+    }
+
+    private static void SafeDeleteDirectory(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            return;
+        }
+
+        const int maxAttempts = 5;
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                ClearReadOnlyAttributes(path);
+                Directory.Delete(path, recursive: true);
+                return;
+            }
+            catch (IOException) when (attempt < maxAttempts)
+            {
+                Thread.Sleep(200 * attempt);
+            }
+            catch (UnauthorizedAccessException) when (attempt < maxAttempts)
+            {
+                Thread.Sleep(200 * attempt);
+            }
+        }
+
+        ClearReadOnlyAttributes(path);
+        Directory.Delete(path, recursive: true);
+    }
+
+    private static void ClearReadOnlyAttributes(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            return;
+        }
+
+        foreach (var file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+        {
+            try
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+            }
+            catch
+            {
+                // Ignore attribute cleanup failures.
+            }
+        }
+
+        foreach (var directory in Directory.GetDirectories(path, "*", SearchOption.AllDirectories))
+        {
+            try
+            {
+                File.SetAttributes(directory, FileAttributes.Normal);
+            }
+            catch
+            {
+                // Ignore attribute cleanup failures.
+            }
+        }
+
+        try
+        {
+            File.SetAttributes(path, FileAttributes.Normal);
+        }
+        catch
+        {
+            // Ignore attribute cleanup failures.
+        }
+    }
+
+    private string CreateFrozenAssignmentRoot(Assignment assignment, DateTime frozenAtUtc)
+    {
+        var kst = TimeViewHelper.ToKst(frozenAtUtc);
+        var timestamp = kst.ToString("yyyy-MM-dd-HH-mm-ss");
+
+        var assignmentSegment = SanitizePathSegment(assignment.Title);
+
+        if (string.IsNullOrWhiteSpace(assignmentSegment))
+        {
+            assignmentSegment = $"assignment_{assignment.Id}";
+        }
+
+        var folderName = $"{timestamp}_{assignmentSegment}";
+
+        return Path.Combine(
+            _environment.ContentRootPath,
+            "storage",
+            "frozen",
+            folderName
+        );
+    }
+
+    private string GetFrozenAssignmentRoot(Assignment assignment)
+    {
+        if (!string.IsNullOrWhiteSpace(assignment.FreezeRootPath))
+        {
+            return assignment.FreezeRootPath;
+        }
+
+        return Path.Combine(
+            _environment.ContentRootPath,
+            "storage",
+            "frozen",
+            $"assignment_{assignment.Id}"
+        );
+    }
+
+    private void DeleteFrozenAssignmentRoot(Assignment assignment)
+    {
+        var root = GetFrozenAssignmentRoot(assignment);
+
+        SafeDeleteDirectory(root);
     }
 }

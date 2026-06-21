@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LangGrader.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260621094538_AddSubmissionFreezeFields")]
-    partial class AddSubmissionFreezeFields
+    [Migration("20260621095947_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -60,7 +60,13 @@ namespace LangGrader.Migrations
                     StudentId = table.Column<long>(type: "INTEGER", nullable: false),
                     SubmittedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     Status = table.Column<string>(type: "TEXT", nullable: false),
-                    IsLate = table.Column<bool>(type: "INTEGER", nullable: false)
+                    IsLate = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsSelectedForFreeze = table.Column<bool>(type: "INTEGER", nullable: false),
+                    FrozenAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FreezeStatus = table.Column<string>(type: "TEXT", nullable: false),
+                    FreezeMessage = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -17,4 +17,7 @@ public class Assignment
     public string MainFileCandidatesJson { get; set; } = "[\"main.c\"]";
 
     public List<Submission> Submissions { get; set; } = new();
+
+    public DateTime? FrozenAt { get; set; }
+    public string? FreezeRootPath { get; set; }
 }
