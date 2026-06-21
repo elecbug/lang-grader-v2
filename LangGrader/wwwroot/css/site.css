@@ -368,3 +368,22 @@ select:disabled {
     white-space: pre-line;
     max-width: 760px;
 }
+
+input[type="file"] {
+    width: 100%;
+    max-width: 760px;
+    min-height: 34px;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    color: var(--text);
+    font: inherit;
+}
+
+pre.code {
+    display: block;
+    padding: 12px;
+    overflow-x: auto;
+    white-space: pre;
+}

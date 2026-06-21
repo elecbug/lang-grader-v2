@@ -1,0 +1,68 @@
+﻿@page
+@model LangGrader.Pages.Admin.Students.ImportModel
+@{
+    ViewData["Title"] = "Import Students";
+}
+
+<h1 class="page-title">Import Students</h1>
+
+<div class="toolbar">
+    <a class="button button-secondary" asp-page="/Admin/Students/Index">
+        Back to Students
+    </a>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="message message-error">
+        @Model.ErrorMessage
+    </div>
+}
+
+<div class="card">
+    <h2 class="card-title">CSV Format</h2>
+
+    <p>
+        Upload a CSV file with the following columns:
+    </p>
+
+    <pre class="code">StudentNo,Name
+20201234,Kim Minji
+20204567,Lee Sungwook</pre>
+
+    <p class="text-muted">
+        New students will receive generated initial passwords.
+        Existing students will not have their passwords reset by this import.
+    </p>
+</div>
+
+<div class="card">
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+        @Html.AntiForgeryToken()
+
+        <div class="form-row">
+            <label asp-for="CsvFile">CSV file</label>
+            <input asp-for="CsvFile" type="file" accept=".csv,text/csv" />
+        </div>
+
+        <div class="form-row">
+            <label>
+                <input asp-for="UpdateExistingNames" />
+                Update existing student names
+            </label>
+        </div>
+
+        <div class="form-row">
+            <label>
+                <input asp-for="ReactivateExistingStudents" />
+                Reactivate existing inactive students
+            </label>
+        </div>
+
+        <div class="toolbar">
+            <button type="submit" class="button-primary">
+                Import Students
+            </button>
+        </div>
+    </form>
+</div>

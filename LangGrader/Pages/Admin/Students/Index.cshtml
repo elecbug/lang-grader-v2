@@ -1,0 +1,140 @@
+﻿@page
+@model LangGrader.Pages.Admin.Students.IndexModel
+@{
+    ViewData["Title"] = "Manage Students";
+}
+
+<h1 class="page-title">Manage Students</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <div class="message message-success">
+        @Model.Message
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="message message-error">
+        @Model.ErrorMessage
+    </div>
+}
+
+<div class="toolbar">
+    <a class="button button-primary" asp-page="/Admin/Students/Import">
+        Import Students
+    </a>
+
+    <a class="button button-secondary" asp-page="/Admin/Assignments/Index">
+        Manage Assignments
+    </a>
+
+    <a class="button button-secondary" asp-page="/Admin/Database">
+        Database Viewer
+    </a>
+</div>
+
+@if (Model.Students.Count == 0)
+{
+    <div class="message message-info">
+        No students found.
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Student No</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Active</th>
+                    <th>Must Change Password</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in Model.Students)
+                {
+                    <tr>
+                        <td>@student.Id</td>
+                        <td>@student.StudentNo</td>
+                        <td>@student.Name</td>
+                        <td>
+                            @if (student.Role == "Admin")
+                            {
+                                <span class="badge badge-info">Admin</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-muted">Student</span>
+                            }
+                        </td>
+                        <td>
+                            @if (student.IsActive)
+                            {
+                                <span class="badge badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-error">Inactive</span>
+                            }
+                        </td>
+                        <td>
+                            @if (student.MustChangePassword)
+                            {
+                                <span class="badge badge-warning">Required</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-muted">No</span>
+                            }
+                        </td>
+                        <td>@TimeViewHelper.FormatKst(student.CreatedAt)</td>
+                        <td>
+                            @if (student.Role == "Admin")
+                            {
+                                <span class="text-muted">Admin account</span>
+                            }
+                            else
+                            {
+                                <div class="toolbar">
+                                    <form method="post"
+                                          class="inline-form"
+                                          asp-page-handler="ToggleActive"
+                                          asp-route-id="@student.Id">
+                                        @if (student.IsActive)
+                                        {
+                                            <button type="submit" class="button-warning button-small">
+                                                Deactivate
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="button-primary button-small">
+                                                Activate
+                                            </button>
+                                        }
+                                    </form>
+
+                                    <form method="post"
+                                          class="inline-form"
+                                          asp-page-handler="ResetPassword"
+                                          asp-route-id="@student.Id"
+                                          onsubmit="return confirm('Reset password for this student?');">
+                                        <button type="submit" class="button-danger button-small">
+                                            Reset Password
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
